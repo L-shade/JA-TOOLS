@@ -622,7 +622,7 @@ namespace JA.IfcViewer.Viewer
 
         private sealed class Snap { public Vec3 P; public string Kind; public Hit Hit; }
 
-        private sealed class Measure
+        private sealed class Medida
         {
             public MeasureMode Kind;
             public readonly List<Vec3> Pts = new List<Vec3>();
@@ -631,8 +631,8 @@ namespace JA.IfcViewer.Viewer
             public Vec3 LabelAt;
         }
 
-        private readonly List<Measure> _measures = new List<Measure>();
-        private Measure _current;
+        private readonly List<Medida> _measures = new List<Medida>();
+        private Medida _current;
         private Snap _hover;
         private MeasureMode _mode;
 
@@ -709,7 +709,7 @@ namespace JA.IfcViewer.Viewer
                 case MeasureMode.Point:
                 {
                     Snap s = SnapOf(h, p);
-                    var m = new Measure { Kind = MeasureMode.Point, LabelAt = s.P };
+                    var m = new Medida { Kind = MeasureMode.Point, LabelAt = s.P };
                     m.Pts.Add(s.P);
                     Vec3 w = s.P + o;
                     m.Text = $"X {Fmt(w.X)}   Y {Fmt(w.Y)}";
@@ -723,7 +723,7 @@ namespace JA.IfcViewer.Viewer
                     Snap s = SnapOf(h, p);
                     if (_current == null)
                     {
-                        _current = new Measure { Kind = MeasureMode.Distance };
+                        _current = new Medida { Kind = MeasureMode.Distance };
                         _current.Pts.Add(s.P);
                         Message?.Invoke("Distância: clique no segundo ponto.");
                     }
@@ -739,7 +739,7 @@ namespace JA.IfcViewer.Viewer
                 }
                 case MeasureMode.Area:
                 {
-                    Measure m = FaceArea(h);
+                    Medida m = FaceArea(h);
                     if (m != null) { _measures.Add(m); Message?.Invoke("Área da face: " + m.Text + "   " + m.Sub); }
                     break;
                 }
@@ -756,7 +756,7 @@ namespace JA.IfcViewer.Viewer
 
         private static string Fmt(double v) => v.ToString("0.000", PropertyReader.Br);
 
-        private static void Finish(Measure m)
+        private static void Finish(Medida m)
         {
             Vec3 a = m.Pts[0], b = m.Pts[1], d = b - a;
             m.Text = Fmt(d.Length) + " m";
@@ -765,7 +765,7 @@ namespace JA.IfcViewer.Viewer
         }
 
         /// <summary>The connected coplanar triangles of the element around the clicked one.</summary>
-        private Measure FaceArea(Hit h)
+        private Medida FaceArea(Hit h)
         {
             IfcObject o = Scene.Objects[h.Index];
             if (!o.HasGeometry) return null;
@@ -824,7 +824,7 @@ namespace JA.IfcViewer.Viewer
                     edges[ek] = edges.TryGetValue(ek, out var e) ? (e.a, e.b, e.n + 1) : (p, q, 1);
                 }
             }
-            var m = new Measure { Kind = MeasureMode.Area, Outline = new List<Vec3>() };
+            var m = new Medida { Kind = MeasureMode.Area, Outline = new List<Vec3>() };
             double perim = 0;
             foreach (var e in edges.Values) if (e.n == 1) { m.Outline.Add(e.a); m.Outline.Add(e.b); perim += (e.b - e.a).Length; }
             m.LabelAt = area > 0 ? centroid / area : h.Point;
@@ -871,7 +871,7 @@ namespace JA.IfcViewer.Viewer
                 int[,] e = { { 0, 1 }, { 2, 3 }, { 4, 5 }, { 6, 7 }, { 0, 2 }, { 1, 3 }, { 4, 6 }, { 5, 7 }, { 0, 4 }, { 1, 5 }, { 2, 6 }, { 3, 7 } };
                 for (int i = 0; i < 12; i++) Seg(C(e[i, 0]), C(e[i, 1]), BoxBrush, 1.2, true);
             }
-            foreach (Measure m in _measures) DrawMeasure(m);
+            foreach (Medida m in _measures) DrawMeasure(m);
             if (_current != null)
             {
                 DrawMeasure(_current);
@@ -885,7 +885,7 @@ namespace JA.IfcViewer.Viewer
             if (_hover != null && Mode != MeasureMode.None) Marker(_hover.P, _hover.Kind);
         }
 
-        private void DrawMeasure(Measure m)
+        private void DrawMeasure(Medida m)
         {
             switch (m.Kind)
             {
