@@ -20,6 +20,10 @@ import os, re, subprocess, sys, glob
 
 RAIZ = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 GH = os.environ.get('GITHUB_ACTIONS') == 'true'
+# Windows (cp1252) quebra ao imprimir “−”, “→”, “²”: saída sempre em UTF-8.
+for _s in (sys.stdout, sys.stderr):
+    try: _s.reconfigure(encoding='utf-8', errors='replace')
+    except Exception: pass
 erros, avisos = [], []
 
 
@@ -221,7 +225,7 @@ def testes():
     alvo = sorted(glob.glob(os.path.join(RAIZ, 'docs', 'testes', '**', 'test_*.py'), recursive=True))
     for t in alvo:
         try:
-            r = subprocess.run([sys.executable, '-I', os.path.basename(t)], cwd=os.path.dirname(t), capture_output=True, text=True, timeout=900, encoding='utf-8', errors='replace')
+            r = subprocess.run([sys.executable, '-I', '-X', 'utf8', os.path.basename(t)], cwd=os.path.dirname(t), capture_output=True, text=True, timeout=900, encoding='utf-8', errors='replace', env=dict(os.environ, PYTHONUTF8='1', PYTHONIOENCODING='utf-8'))
             ultimas = [l for l in (r.stdout + r.stderr).splitlines() if l.strip()][-6:]
             if r.returncode != 0:
                 erro(t, 1, 'teste falhou: ' + ' | '.join(ultimas))

@@ -1213,6 +1213,11 @@ Grupos do `ToolCatalog` = painéis (Esquadrias, Pedras e Nichos, Gerenciar, Docu
     fixo (`JA_Setup.exe`, `JA_Instalador.zip`): o link
     https://github.com/L-shade/JA-TOOLS/releases/latest/download/JA_Setup.exe baixa sempre a última versão
     (está no README). Sem mudança no add-in (continua 2.6.1).
+109. 23/11/2026 — o usuário criou a Release v2.6.1 pelo site, mas o **Publicar versão** falhou na verificação: no
+    Windows o console do Python é cp1252 e um teste do rodapé quebrava ao imprimir “−” (UnicodeEncodeError). No Linux
+    passava. `verificar.py` força UTF-8 (na própria saída e nos testes, `-X utf8`/PYTHONUTF8) e o job Windows do
+    **Verificar e compilar** roda a verificação também, para pegar isso antes. A etiqueta v2.6.1 foi movida para o
+    main com a correção e a Release recebeu o instalador.
 
 ### Pedidos em aberto
 20. ~~Painéis de parede cortina~~ — feito na 1.9.0 (item 57).
