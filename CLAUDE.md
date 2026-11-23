@@ -31,3 +31,4 @@ compilado (pela execução do GitHub Actions) e como testar.
 - net48: sem `Math.Clamp`, `GetValueOrDefault`, `string.Contains(string, StringComparison)`, ranges/índices `^1`.
 - Toda classe concreta que herda de `ToolCommand` precisa de `[Transaction(TransactionMode.Manual)]`.
 - LTSCALE do DWG é sempre 1 (o motor reescala as definições de linha; o model usa escala de anotação + MSLTSCALE).
+- Scripts Python rodam também no Windows (cp1252): saída com “−”, “→”, “²” precisa de UTF-8 (`verificar.py` já força).
