@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Autodesk.AutoCAD.DatabaseServices;
@@ -31,6 +31,7 @@ namespace RevitDwgUnifier.AcadMerge.Cleanup
             List<InstallationLayerMove> moves = (o.InstallationLayerMoves ?? new List<InstallationLayerMove>())
                 .Where(m => m != null && !string.IsNullOrWhiteSpace(m.From) && !string.IsNullOrWhiteSpace(m.To)).ToList();
 
+            string areaLayer = string.IsNullOrWhiteSpace(o.AreaTextLayer) ? "JA - TXT_AREA_CONSTR" : o.AreaTextLayer.Trim();
             var counts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
             var layerIds = new Dictionary<string, ObjectId>(StringComparer.OrdinalIgnoreCase);
             var styleTarget = new Dictionary<ObjectId, string>();
@@ -51,6 +52,7 @@ namespace RevitDwgUnifier.AcadMerge.Cleanup
                         if (!(tr.GetObject(id, OpenMode.ForRead) is Entity e)) continue;
                         if (e is AttributeDefinition) continue;
                         string layer = e.Layer;
+                        if (string.Equals(layer, areaLayer, StringComparison.OrdinalIgnoreCase)) continue;   // PD / área dos ambientes: ficam
 
                         // 1. the whole layer of a tag category of one discipline
                         string target = LayerMove(layer, moves, layerMove);

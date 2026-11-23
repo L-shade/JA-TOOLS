@@ -1199,6 +1199,15 @@ Grupos do `ToolCatalog` = painéis (Esquadrias, Pedras e Nichos, Gerenciar, Docu
     de tipo = código, tipos 800×2000, 900×2100, 1100×2100. Salva "JA Porta de Elevador <código>.rfa" na pasta de
     famílias, carrega e PromptForFamilyInstancePlacement.
 
+107. 23/11/2026 — exportador DWG: "a área não está na layer correta" (texto “2.59 m²” da etiqueta de ambiente ficou
+    na layer da etiqueta). JA para Revit 2.6.1. Motor AutoCAD, `Cleanup/JaStandards.MoveAreaTexts`: além de textos só
+    de área/PD, agora (1) MText de várias linhas que mistura o nome com a área (“CIRC.\P2.59 m²”) é explodido no lugar
+    (`Separar`: linhas pelo baseline; as de área/PD na layer de área, as outras na original); (2) número e unidade em
+    textos separados na mesma linha (“2.59” + “m²”, “PD” + “2,80”) vão juntos (`Pares`); (3) definições de atributo
+    (textos fixos de etiqueta) também; (4) `InstallationMover` não tira mais nada da layer de área; (5) o registro da
+    exportação lista os textos com cara de área/PD que ficaram fora (`Sobras`). Teste: docs/testes/padrao_ja/test_area.py
+    (espelho do IsAreaOrPd). Primeira versão feita pela rotina do GitHub (CI compilou).
+
 ### Pedidos em aberto
 20. ~~Painéis de parede cortina~~ — feito na 1.9.0 (item 57).
 21. ~~Folha "solta" na planta~~ — conferência automática + Conferir Planta na 1.9.0 (item 58); aguardando o
