@@ -2,6 +2,9 @@
 
 [![Verificar e compilar](https://github.com/L-shade/JA-TOOLS/actions/workflows/compilar.yml/badge.svg)](https://github.com/L-shade/JA-TOOLS/actions/workflows/compilar.yml)
 
+**Download (sempre a última versão):** [JA_Setup.exe](https://github.com/L-shade/JA-TOOLS/releases/latest/download/JA_Setup.exe)
+· [todas as versões](https://github.com/L-shade/JA-TOOLS/releases). Rode o instalador com o Revit fechado.
+
 Rotina de trabalho (verificação, compilação automática e publicação no GitHub): [docs/ROTINA.md](docs/ROTINA.md).
 
 Add-in do Revit 2024–2027 da **JA Arquitetos Associados**. Uma só instalação e uma só DLL
