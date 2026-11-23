@@ -1,9 +1,10 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Autodesk.AutoCAD.Colors;
 using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.Geometry;
 using RevitDwgUnifier.Contracts;
 
 namespace RevitDwgUnifier.AcadMerge.Cleanup
@@ -45,6 +46,12 @@ namespace RevitDwgUnifier.AcadMerge.Cleanup
                      $", {hatches} hachura(s) em '{hatchLayer}', {texts} texto(s) de PD/área em '{textLayer}'.");
             if (mixed > 0)
                 log.Warn($"Padrão JA: {mixed} texto(s) de ambiente misturam o nome com PD/área numa linha só e ficaram na layer original.");
+            try
+            {
+                List<string> sobras = Sobras(db, textLayer);
+                if (sobras.Count > 0) log.Warn("Padrão JA: textos com cara de área/PD que ficaram fora de '" + textLayer + "':\n  " + string.Join("\n  ", sobras));
+            }
+            catch (Exception ex) { log.Info("Padrão JA: lista de sobras não feita (" + ex.Message + ")."); }
 
             // notes and tags of the building services → "JA - INST_..." layers
             if (o.InstallationLayers)
@@ -273,10 +280,20 @@ namespace RevitDwgUnifier.AcadMerge.Cleanup
             return false;
         }
 
+        /// <summary>
+        /// PD / area texts of the room tags → the area layer, wherever they are (model, layouts, inside every block —
+        /// the tag blocks, the views kept as blocks — and attributes / constant attribute definitions):
+        ///  • a text that is only PD and/or area ("2.59 m²", "A: 12,50 m2", "PD = 2,80") is moved;
+        ///  • a multi-line MText that mixes the name with the area ("CIRC.\P2.59 m²") is split where it is: its lines
+        ///    become texts in the same place, the PD/area lines on the area layer, the others on the original one;
+        ///  • a number and its unit written as separate texts on one line ("2.59" + "m²", "PD" + "2,80") move together.
+        /// The texts that look like an area but stayed are listed in the log (layer, kind, text) to show why.
+        /// </summary>
         private static int MoveAreaTexts(Database db, string layer, int aci, out int mixed)
         {
             int n = 0;
             mixed = 0;
+            var misturados = new List<ObjectId>();
             using (var tr = db.TransactionManager.StartTransaction())
             {
                 ObjectId layerId = EnsureLayer(db, tr, layer, aci);
@@ -285,6 +302,7 @@ namespace RevitDwgUnifier.AcadMerge.Cleanup
                 {
                     var space = (BlockTableRecord)tr.GetObject(spaceId, OpenMode.ForRead);
                     if (space.IsFromExternalReference || space.IsDependent) continue;
+                    var linha = new List<DBText>();      // single-line texts of this space, for the number + unit pairs
                     foreach (ObjectId id in space)
                     {
                         DBObject obj = tr.GetObject(id, OpenMode.ForRead);
@@ -292,22 +310,141 @@ namespace RevitDwgUnifier.AcadMerge.Cleanup
                         {
                             foreach (ObjectId aid in br.AttributeCollection)
                                 if (tr.GetObject(aid, OpenMode.ForRead) is AttributeReference ar)
-                                    n += Retag(tr, ar, ar.TextString, layerId, ref mixed);
+                                {
+                                    string at = ar.TextString;
+                                    try { if (ar.IsMTextAttribute) at = ar.MTextAttribute.Text; } catch (Exception) { }
+                                    int dummy = 0;
+                                    n += Retag(tr, ar, at, layerId, ref dummy);
+                                }
                             continue;
                         }
-                        if (obj is AttributeDefinition) continue;
-                        if (obj is DBText t) n += Retag(tr, t, t.TextString, layerId, ref mixed);
+                        if (obj is AttributeDefinition ad)
+                        {
+                            int dummy = 0;
+                            n += Retag(tr, ad, ad.TextString, layerId, ref dummy);    // constant / preset tag texts
+                            continue;
+                        }
+                        if (obj is DBText t)
+                        {
+                            int r = Retag(tr, t, t.TextString, layerId, ref mixed);
+                            n += r;
+                            if (r == 0 && t.LayerId != layerId) linha.Add(t);
+                        }
                         else if (obj is MText m)
                         {
                             string plain;
                             try { plain = m.Text; } catch (Exception) { plain = m.Contents; }
+                            int antes = mixed;
                             n += Retag(tr, m, plain, layerId, ref mixed);
+                            if (mixed > antes) misturados.Add(m.ObjectId);
                         }
                     }
+                    n += Pares(tr, linha, layerId);
                 }
+                // mixed multi-line texts: split by lines (after the walk: the blocks change)
+                int separados = 0;
+                foreach (ObjectId id in misturados)
+                {
+                    int r = Separar(tr, id, layerId);
+                    if (r > 0) { n += r; separados++; }
+                }
+                mixed -= separados;
                 tr.Commit();
             }
             return n;
+        }
+
+        /// <summary>Texts on one line (same direction and baseline, gaps under 1,5 × height) that together are PD / area.</summary>
+        private static int Pares(Transaction tr, List<DBText> textos, ObjectId layerId)
+        {
+            if (textos.Count < 2) return 0;
+            int n = 0;
+            var usados = new HashSet<ObjectId>();
+            foreach (DBText a in textos.OrderBy(x => x.Position.X))
+            {
+                if (usados.Contains(a.ObjectId) || a.Height <= 0) continue;
+                Vector3d dir = new Vector3d(Math.Cos(a.Rotation), Math.Sin(a.Rotation), 0), nrm = new Vector3d(-dir.Y, dir.X, 0);
+                double h = a.Height;
+                var grupo = textos.Where(b => !usados.Contains(b.ObjectId) && Math.Abs(b.Rotation - a.Rotation) < 1e-3 &&
+                                              Math.Abs((b.Position - a.Position).DotProduct(nrm)) < 0.6 * h &&
+                                              Math.Abs((b.Position - a.Position).DotProduct(dir)) < 12 * h)
+                                  .OrderBy(b => (b.Position - a.Position).DotProduct(dir)).ToList();
+                if (grupo.Count < 2) continue;
+                // consecutive pieces only (a gap breaks the line)
+                var linha = new List<DBText> { grupo[0] };
+                for (int i = 1; i < grupo.Count; i++)
+                {
+                    DBText ant = linha[linha.Count - 1];
+                    double fim = (ant.Position - grupo[0].Position).DotProduct(dir) + Fim(ant, dir);
+                    double ini = (grupo[i].Position - grupo[0].Position).DotProduct(dir);
+                    if (ini - fim > 1.5 * h) break;
+                    linha.Add(grupo[i]);
+                }
+                if (linha.Count < 2) continue;
+                string junto = string.Join(" ", linha.Select(x => x.TextString));
+                if (!IsAreaOrPd(junto, out _)) continue;
+                int dummy = 0;
+                foreach (DBText x in linha) { usados.Add(x.ObjectId); n += Retag(tr, x, "1 m2", layerId, ref dummy); }
+            }
+            return n;
+        }
+
+        /// <summary>Length of a text along its direction, from its position (bounds, else an estimate).</summary>
+        private static double Fim(DBText t, Vector3d dir)
+        {
+            try
+            {
+                Extents3d e = t.GeometricExtents;
+                double a = (e.MinPoint - Point3d.Origin).DotProduct(dir), b = (e.MaxPoint - Point3d.Origin).DotProduct(dir);
+                return Math.Max(a, b) - (t.Position - Point3d.Origin).DotProduct(dir);
+            }
+            catch (Exception) { return (t.TextString ?? "").Length * t.Height * 0.8; }
+        }
+
+        /// <summary>
+        /// A multi-line MText with the room name and the PD / area: exploded into its line texts in the same place
+        /// (AutoCAD's own explode keeps position, height and style), the PD / area lines on the area layer.
+        /// </summary>
+        private static int Separar(Transaction tr, ObjectId id, ObjectId layerId)
+        {
+            try
+            {
+                var m = (MText)tr.GetObject(id, OpenMode.ForRead);
+                var partes = new DBObjectCollection();
+                m.Explode(partes);
+                var textos = partes.OfType<DBText>().ToList();
+                if (textos.Count < 2) { foreach (DBObject o in partes) o.Dispose(); return 0; }
+                // lines: same baseline across the MText direction
+                Vector3d dir = m.Direction.GetNormal(), nrm = m.Normal.CrossProduct(dir).GetNormal();
+                double tol = Math.Max(1e-6, textos.Min(x => x.Height) * 0.5);
+                var linhas = new List<List<DBText>>();
+                foreach (DBText t in textos.OrderByDescending(x => (x.Position - m.Location).DotProduct(nrm)))
+                {
+                    double y = (t.Position - m.Location).DotProduct(nrm);
+                    var l = linhas.FirstOrDefault(g => Math.Abs((g[0].Position - m.Location).DotProduct(nrm) - y) < tol);
+                    if (l == null) linhas.Add(l = new List<DBText>());
+                    l.Add(t);
+                }
+                var area = new HashSet<DBText>();
+                foreach (var l in linhas)
+                {
+                    string texto = string.Join(" ", l.OrderBy(x => (x.Position - m.Location).DotProduct(dir)).Select(x => x.TextString));
+                    if (IsAreaOrPd(texto, out _)) foreach (DBText t in l) area.Add(t);
+                }
+                if (area.Count == 0 || area.Count == textos.Count) { foreach (DBObject o in partes) o.Dispose(); return 0; }
+                var dono = (BlockTableRecord)tr.GetObject(m.OwnerId, OpenMode.ForWrite);
+                foreach (DBText t in textos)
+                {
+                    if (area.Contains(t)) { t.LayerId = layerId; t.ColorIndex = 256; }
+                    dono.AppendEntity(t);
+                    tr.AddNewlyCreatedDBObject(t, true);
+                }
+                foreach (DBObject o in partes) if (!(o is DBText)) o.Dispose();
+                m.UpgradeOpen();
+                m.Erase();
+                return area.Count;
+            }
+            catch (Exception) { return 0; }
         }
 
         private static int Retag(Transaction tr, Entity e, string text, ObjectId layerId, ref int mixed)
@@ -326,6 +463,32 @@ namespace RevitDwgUnifier.AcadMerge.Cleanup
                 return 1;
             }
             catch (Exception) { return 0; }
+        }
+
+        /// <summary>For the log: texts that mention an area or PD but did not go to the area layer (where and what).</summary>
+        internal static List<string> Sobras(Database db, string layer, int max = 8)
+        {
+            var r = new List<string>();
+            var pista = new Regex(@"\d\s*m\s*(²|2|\\U\+00B2|%%178)|\bp\.?\s*d\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+            using (var tr = db.TransactionManager.StartTransaction())
+            {
+                var bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+                foreach (ObjectId spaceId in bt)
+                {
+                    var space = (BlockTableRecord)tr.GetObject(spaceId, OpenMode.ForRead);
+                    if (space.IsFromExternalReference || space.IsDependent) continue;
+                    foreach (ObjectId id in space)
+                    {
+                        if (r.Count >= max) break;
+                        if (!(tr.GetObject(id, OpenMode.ForRead) is Entity e) || string.Equals(e.Layer, layer, StringComparison.OrdinalIgnoreCase)) continue;
+                        string raw = e is DBText t ? t.TextString : e is MText m ? m.Contents : null;
+                        if (raw == null || !pista.IsMatch(raw)) continue;
+                        r.Add($"{e.GetType().Name} na layer '{e.Layer}' (bloco '{space.Name}'): «{(raw.Length > 80 ? raw.Substring(0, 80) + "…" : raw)}»");
+                    }
+                }
+                tr.Commit();
+            }
+            return r;
         }
 
         // ================================================================== layers
