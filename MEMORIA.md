@@ -1217,7 +1217,9 @@ Grupos do `ToolCatalog` = painéis (Esquadrias, Pedras e Nichos, Gerenciar, Docu
     Windows o console do Python é cp1252 e um teste do rodapé quebrava ao imprimir “−” (UnicodeEncodeError). No Linux
     passava. `verificar.py` força UTF-8 (na própria saída e nos testes, `-X utf8`/PYTHONUTF8) e o job Windows do
     **Verificar e compilar** roda a verificação também, para pegar isso antes. A etiqueta v2.6.1 foi movida para o
-    main com a correção e a Release recebeu o instalador.
+    main. Esta sessão não pode criar/mover etiquetas nem Releases (proxy), então o **Publicar versão** rodado à mão
+    no main (Run workflow) agora também publica: cria a Release vX.Y.Z da versão atual ou anexa os arquivos à que
+    existe (a v2.6.1 ficou na etiqueta 3945a18; o add-in é o mesmo, só mudou CI/documentação).
 
 ### Pedidos em aberto
 20. ~~Painéis de parede cortina~~ — feito na 1.9.0 (item 57).

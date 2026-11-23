@@ -56,6 +56,8 @@ git tag v2.6.1 && git push origin v2.6.1  ──► "Publicar versão": instalad
 5. Publicar = etiqueta `vX.Y.Z` igual à versão do `Directory.Build.props`: pelo git (acima) ou pelo site, em
    **Releases › Draft a new release** (etiqueta `vX.Y.Z` nova, alvo `main`, *Publish release*). Em ~15 min o
    workflow anexa `JA_Setup_X.Y.Z.exe`, o zip e as cópias de nome fixo.
+   Mais simples: **Actions › Publicar versão › Run workflow** (branch `main`) cria a Release da versão atual, ou
+   anexa o instalador à que já existe.
 
 ## Página de download
 
