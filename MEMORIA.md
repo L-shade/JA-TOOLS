@@ -1221,6 +1221,16 @@ Grupos do `ToolCatalog` = painéis (Esquadrias, Pedras e Nichos, Gerenciar, Docu
     no main (Run workflow) agora também publica: cria a Release vX.Y.Z da versão atual ou anexa os arquivos à que
     existe (a v2.6.1 ficou na etiqueta 3945a18; o add-in é o mesmo, só mudou CI/documentação).
 
+111. 23/11/2026 — de novo "a área não está na layer correta" (“BICICLETÁRIO / 272.60 m²”: nome em Arial, área em outra
+    fonte, os dois na cor da layer da etiqueta). JA para Revit 2.6.2. `Cleanup/JaStandards`: (1) as três partes do
+    Padrão JA (pilares, hachuras, textos) rodam cada uma no seu try — antes, um erro ao explodir pilares fazia o
+    `Step("jastd")` engolir a exceção e os textos de área nem eram vistos; (2) `Normalizar` antes de reconhecer:
+    códigos de MText (\\F, \\H, \\A, \\T, \\p…;, pilha \\S2^;), \\U+XXXX, %%178, NFKC (² → 2, ㎡ → m2, dígitos largos),
+    espaço não separável e caracteres invisíveis (U+200B, U+FEFF, hífen suave); MText testa `Text` e `Contents`;
+    (3) `Separar`: o “²” sobrescrito (pedaço menor e mais alto) entra na linha da área, não vira linha própria;
+    (4) `Sobras` também olha atributos, diz se está misturado e mostra caracteres escondidos como <U+XXXX>.
+    Teste: docs/testes/padrao_ja/test_area.py (43 casos). Primeiro pedido feito pelo processo da equipe (Issue + QA).
+
 ### Pedidos em aberto
 20. ~~Painéis de parede cortina~~ — feito na 1.9.0 (item 57).
 21. ~~Folha "solta" na planta~~ — conferência automática + Conferir Planta na 1.9.0 (item 58); aguardando o
