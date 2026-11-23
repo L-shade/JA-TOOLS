@@ -33,7 +33,7 @@ git tag v2.6.1 && git push origin v2.6.1  ──► "Publicar versão": instalad
 
 ## Equipe
 
-Pedidos grandes seguem o processo com gerente, programador e QA: [docs/equipe/PROCESSO.md](equipe/PROCESSO.md).
+Os pedidos seguem o processo com gerente, programador e QA, em arquivos (`equipe/`), sem Issues nem PRs: [docs/equipe/PROCESSO.md](equipe/PROCESSO.md).
 
 ## Como pedir
 

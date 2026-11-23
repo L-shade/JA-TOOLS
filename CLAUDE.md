@@ -20,16 +20,19 @@ compilado (pela execução do GitHub Actions) e como testar.
 3. Envie: o workflow **Verificar e compilar** compila Revit 2024–2027 + AutoCAD. Acompanhe com
    `gh run list --branch <branch>` / `gh run view <id> --log-failed`; corrija até ficar verde.
 4. Versão: `python tools/versao.py patch|minor|X.Y.Z` + item no `MEMORIA.md`.
-5. Pull request para o `main`; publicar = etiqueta `vX.Y.Z` (workflow **Publicar versão**).
+5. Liberação pelo processo da equipe (`tools/equipe/liberar.py`): merge no `main` + **Publicar versão**.
 6. Uma armadilha nova vira verificação em `tools/verificar/verificar.py`.
 
 ## Equipe (docs/equipe/PROCESSO.md)
-- Papéis: Diretor (usuário), Gerente (outra conversa, abre Issues `pedido`), **Programador (a conversa com o
-  código — siga docs/equipe/PROGRAMADOR.md)**, QA (agente `qa-ja`, sem ver o código, recebe só o pacote de
-  `tools/equipe/pacote_qa.py`).
-- Liberar só com o placar (`tools/equipe/consenso.py`): QA APROVADO + programador CONCORDO no mesmo commit; após 3
-  iterações sem consenso, o commit de maior nota. Liberação: `tools/equipe/liberar.py --pr N --sim`.
-- O usuário autorizou o Claude a fazer sozinho as operações do GitHub (merge, disparar workflows, comentários).
+- Papéis: Diretor (usuário), Gerente (outra conversa, escreve `equipe/pedidos/NNN-*.md`), **Programador (a
+  conversa com o código — siga docs/equipe/PROGRAMADOR.md)**, QA (agente `qa-ja`, sem ver o código do add-in,
+  recebe só o pacote de `tools/equipe/pacote_qa.py NNN`).
+- **Sem Issues nem PRs** (pedido do diretor, 23/11/2026): pedidos, entregas, relatórios e placar em `equipe/`, no
+  branch `quadro` (cópia em `../ja-quadro`); o GitHub só guarda o código e compila. Nada é enviado direto ao `main`:
+  o código entra pelo `liberar.py` (merge do GitHub).
+- Liberar só com o placar (`tools/equipe/consenso.py NNN`): QA APROVADO + programador CONCORDO no mesmo commit;
+  3ª iteração fechada sem consenso → melhor versão. Liberação: `tools/equipe/liberar.py NNN --sim`.
+- O usuário autorizou o Claude a fazer sozinho merges, envios e disparar workflows.
 
 ## Armadilhas já vistas (C#)
 - `Group` ambíguo (Autodesk.Revit.DB × System.Text.RegularExpressions): use `Autodesk.Revit.DB.Group`.

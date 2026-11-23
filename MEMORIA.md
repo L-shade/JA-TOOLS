@@ -1236,6 +1236,14 @@ Grupos do `ToolCatalog` = painéis (Esquadrias, Pedras e Nichos, Gerenciar, Docu
     sem o placar. Iteração 2: `--sem-publicar`; na 3ª espera a posição; APROVADO vence REPROVADO; APROVADO < 80 vale
     REPROVADO; posição com commit errado não vale; blocos em ``` / citação não contam; iteração 4 ignorada; RETOMAR;
     pacote leva o placar e docs/equipe e recusa C#/XAML/PS1; cenários do QA adotados (test_consenso_qa.py).
+    Iteração 3 (QA 2 reprovou com 60: “CONCORDO EM PARTE” virava consenso, nota vazia quebrava o placar): só palavras
+    exatas, blocos inválidos ignorados e listados em “Avisos”, ~~~, nota “86/100”, chaves com acento, iterações em
+    ordem, LIBERAR do diretor exige commit, melhor versão APROVADO > APROVADO+DISCORDO > REPROVADO (com aviso).
+    No meio, o diretor pediu “sem GitHub”: **sem Issues nem PRs** — cada pedido é `equipe/pedidos/NNN-*.md` (modelo
+    `equipe/MODELO-PEDIDO.md`), com o placar gravado no topo e `equipe/QUADRO.md`; o quadro vive no branch `quadro`
+    (o envio direto ao main foi bloqueado; o compilar.yml ignora esse branch); `liberar.py` junta ao main pelo merge
+    do GitHub (sem PR); regra 7: critérios `(diretor)` (só no Revit/AutoCAD) ficam fora da nota do QA e vão para o
+    roteiro. Workflow do placar e modelos de Issue/PR removidos. Pedidos 006 e 008 migrados das Issues #6/#8.
 
 ### Pedidos em aberto
 20. ~~Painéis de parede cortina~~ — feito na 1.9.0 (item 57).

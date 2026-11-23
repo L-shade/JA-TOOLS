@@ -35,7 +35,7 @@ casos = [
     ('diretor para e depois libera (AMBIGUO: o último vale?)', [qa(1, A, 'REPROVADO', 40), di('PARAR'), di('LIBERAR', A)], 'DIRETOR', A),
     ('iteração 4 é ignorada', [qa(1, A, 'REPROVADO', 50), pg(1, A, 'CONCORDO'), qa(2, B, 'REPROVADO', 75), pg(2, B, 'CONCORDO'),
                                qa(3, C, 'REPROVADO', 60), pg(3, C, 'CONCORDO'), qa(4, A, 'APROVADO', 99)], 'MELHOR_VERSAO', B),
-    ('nota inválida não vira 100 nem quebra', [qa(1, A, 'REPROVADO', 'noventa'), pg(1, A, 'CONCORDO')], 'NOVA_ITERACAO', A),
+    ('nota inválida não vira 100 nem quebra (iteração 3: bloco ignorado, vai para os avisos)', [qa(1, A, 'REPROVADO', 'noventa'), pg(1, A, 'CONCORDO')], 'AGUARDANDO_PROGRAMADOR', ''),
     ('commit curto demais (4) não casa', [qa(1, A, 'APROVADO', 90), pg(1, 'aaaa', 'CONCORDO')], 'AGUARDANDO_PROGRAMADOR', A),
     ('bloco citado (> ) não conta', [en(1, A), '> ' + qa(1, A, 'APROVADO', 90).replace('\n', '\n> ')], 'AGUARDANDO_QA', A),
 ]

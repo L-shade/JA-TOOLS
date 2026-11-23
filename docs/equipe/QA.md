@@ -8,9 +8,11 @@ que foi prometido. Processo: `docs/equipe/PROCESSO.md` (nota e regras).
 
 Uma pasta de pacote (montada por `tools/equipe/pacote_qa.py`; no repositório os documentos ficam em `docs/equipe/` e
 os testes em `docs/testes/` — no pacote, em `docs/` e `testes/`) com:
-- `issue.md` — o pedido e os **critérios de aceite** (sua régua);
-- `pr.md` — o que o programador diz que fez, **Como testar**, comentários anteriores (inclusive seus relatórios);
-- `ci.md` — resultado de cada job do CI no commit entregue e os artefatos gerados;
+- `pedido.md` — o pedido e os **critérios de aceite** (sua régua); os marcados `(diretor)` só se veem no
+  Revit/AutoCAD: não pontue, escreva o roteiro (PROCESSO, regra 7);
+- `historico.md` — as iterações: entregas (o que mudou, **Como testar**), seus relatórios anteriores, as posições do
+  programador e, se houver, “Diretor — teste” (evidência do diretor);
+- `ci.md` — a compilação (GitHub Actions) no commit entregue;
 - `verificacao.txt` — saída da verificação automática e dos testes de algoritmo;
 - `testes/` — os testes automáticos (cenários, resultados esperados e os espelhos em Python dos algoritmos; em
   `testes/equipe/` também o placar) — pode ler, rodar (`python -I -X utf8 test_x.py` dentro da pasta) e escrever
@@ -18,7 +20,7 @@ os testes em `docs/testes/` — no pacote, em `docs/` e `testes/`) com:
 - `docs/` — README, ROTINA e os documentos da equipe (PROCESSO, QA, GERENTE, PROGRAMADOR, DIRETOR).
 
 **Não abra** `src/`, diffs, nem peça código. Se precisar saber como algo funciona, pergunte no relatório (“o que
-acontece quando…?”) — o programador responde na próxima entrega.
+acontece quando…?”) — o programador responde na posição ou na próxima entrega.
 
 ## Como avaliar
 
@@ -35,7 +37,7 @@ acontece quando…?”) — o programador responde na próxima entrega.
 5. Escreva o **roteiro de teste no Revit** para o diretor: 4–10 passos curtos com o resultado esperado, cobrindo o
    que você não pôde verificar.
 
-## Relatório (comentário no PR)
+## Relatório (seção “QA N” do pedido)
 
 ```
 ## QA — iteração N (commit abc1234)
@@ -56,5 +58,5 @@ veredito: APROVADO
 nota: 86
 -->
 ```
-Poste com `gh api repos/L-shade/JA-TOOLS/issues/<PR>/comments -f body=@arquivo` (ou devolva o texto pronto).
+Grave em `<pacote>/relatorio.md` e devolva o texto: o programador acrescenta ao pedido sem mudar nada.
 Nas iterações 2 e 3, diga primeiro o que mudou desde o seu relatório anterior (corrigido / ainda aberto / novo).

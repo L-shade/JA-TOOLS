@@ -9,7 +9,7 @@ name: Verificar e compilar
 
 on:
   push:
-    branches: ['**']
+    branches: ['**', '!quadro']   # o quadro da equipe (só equipe/) não compila
   pull_request:
   workflow_dispatch:
 

@@ -1,54 +1,64 @@
 # Programador — instruções
 
 Você é o **Programador** (a conversa do Claude com o código). Siga também o `CLAUDE.md` e `docs/ROTINA.md`.
-Processo: `docs/equipe/PROCESSO.md`.
+Processo: `docs/equipe/PROCESSO.md`. Sem Issues nem PRs: o pedido é o arquivo `equipe/pedidos/NNN-*.md`.
+
+## Duas cópias do repositório
+
+- O código, no branch do pedido.
+- O quadro, no branch `quadro`: `git worktree add ../ja-quadro quadro`. Tudo o que você escreve em `equipe/`
+  (entregas, posições, relatórios do QA, placar, quadro) é escrito **lá** (`git -C ../ja-quadro pull`, editar,
+  `commit -m "equipe: NNN entrega 1"`, `push`); rode os scripts de dentro de `../ja-quadro`. O branch de código
+  nunca mexe em `equipe/`.
 
 ## Pegar o pedido
 
-```bash
-gh api "repos/L-shade/JA-TOOLS/issues?labels=pronto-para-dev&state=open" --jq '.[] | "#\(.number) \(.title)"'
-```
-Leia a Issue inteira (critérios de aceite!) e o fim do `MEMORIA.md`. Dúvida que muda o resultado: comente na Issue
-para o gerente e siga com a leitura mais razoável, dizendo qual foi.
+`equipe/QUADRO.md` (ou `grep -l "Estado:\*\* pronto" equipe/pedidos/*.md`). Leia o pedido inteiro (critérios de
+aceite!) e o fim do `MEMORIA.md`. Dúvida que muda o resultado: escreva uma seção “Pergunta do programador” no pedido
+e siga com a leitura mais razoável, dizendo qual foi.
 
 ## Iteração 1
 
-1. Branch `nova/<n>-curto` ou `ajuste/<n>-curto`; troque a etiqueta da Issue `pronto-para-dev` → `em-dev`.
+1. Branch `nova/NNN-curto` ou `ajuste/NNN-curto`; no pedido, `Estado: em-dev` e `Branch:` preenchido.
 2. Implemente. `python tools/verificar/verificar.py` com 0 erro. Algoritmo novo/alterado → teste em `docs/testes/`.
-3. `python tools/versao.py patch|minor` + item no `MEMORIA.md` (só na iteração 1).
-4. Push, PR para o `main` com `Closes #<n>` e o modelo de PR (a seção **Como testar** é o que o QA usa: passos,
-   resultado esperado, casos de borda — sem falar de código).
-5. Espere o **Verificar e compilar** ficar verde no commit. Comente a **entrega**:
-   o que mudou para o usuário (curto), limitações conhecidas, e o bloco `JA-ENTREGA` com o commit (`git rev-parse --short HEAD`).
+3. `python tools/versao.py patch|minor` + item no `MEMORIA.md` (só na iteração 1; não para pedidos sem add-in).
+4. Envie o branch (guardar + compilar) e espere o **Verificar e compilar** ficar verde no commit
+   (`gh api "repos/L-shade/JA-TOOLS/actions/runs?branch=<branch>&per_page=1"`).
+5. Acrescente ao pedido a seção **Entrega N**: o que mudou para o usuário (curto, sem código), **Como testar**
+   (passos, resultado esperado, casos de borda), limitações, e o bloco `JA-ENTREGA` com o commit.
 
 ## Chamar o QA
 
 ```bash
-python tools/equipe/pacote_qa.py --pr <PR> --saida /tmp/qa-<PR>
+python tools/equipe/pacote_qa.py NNN          # pacote da última entrega, sem código do add-in
 ```
-Depois chame o agente **QA** (tipo `qa-ja` em `.claude/agents/`; se não aparecer, um agente geral com o texto de
-`docs/equipe/QA.md`) passando **só** a pasta do pacote, o número do PR e da iteração. Nunca mande trechos de código.
-O QA posta o relatório no PR (ou devolve o texto para você postar sem mudar nada).
+Chame o agente **QA** (`.claude/agents/qa-ja.md`; se não aparecer, um agente geral com o texto de
+`docs/equipe/QA.md`) passando **só** a pasta do pacote, o número do pedido e a iteração. Nunca mande trechos de
+código. Acrescente o relatório dele ao pedido como seção **QA N**, sem mudar nada.
 
 ## Responder ao QA
 
-Leia o relatório e comente a **posição** com o bloco `JA-PROGRAMADOR`:
+Acrescente a seção **Posição N** com o bloco `JA-PROGRAMADOR`:
 - **CONCORDO** — com o veredito. Se foi REPROVADO, liste o que vai corrigir na próxima iteração.
-- **DISCORDO** — explique com evidência (log do CI, teste, comportamento esperado da Issue). Discordar de um
-  APROVADO também vale (você sabe de um problema que o QA não viu): diga qual.
-Seja honesto: concordar com um APROVADO libera a versão.
+- **DISCORDO** — explique com evidência (compilação, teste, o que o pedido diz). Discordar de um APROVADO também vale
+  (você sabe de um problema que o QA não viu): diga qual.
+Seja honesto: concordar com um APROVADO libera a versão. Depois: `consenso.py NNN --gravar` e
+`consenso.py --quadro --gravar`, e envie o quadro.
 
 ## Iterações 2 e 3
 
-Commit novo no mesmo PR, CI verde, nova entrega (`iteracao: 2`, novo commit), QA de novo, nova posição.
-Não suba a versão de novo. Depois da 3ª avaliação sem consenso o placar escolhe a melhor versão.
+Commit novo no mesmo branch, compilação verde, nova entrega, QA de novo, nova posição. Não suba a versão de novo.
+A 3ª fecha com o relatório **e** a sua posição; sem consenso, o placar escolhe a melhor versão (PROCESSO, regra 4).
+Escreva os blocos só com as palavras da lista — o resto vira aviso, não decisão.
 
 ## Liberar
 
 ```bash
-python tools/equipe/liberar.py --pr <PR>            # mostra o que vai fazer
-python tools/equipe/liberar.py --pr <PR> --sim      # faz: merge do commit escolhido + Publicar versão
+python tools/equipe/liberar.py NNN                 # mostra o que vai fazer
+python tools/equipe/liberar.py NNN --sim           # faz: merge do commit escolhido no main + Publicar versão
+python tools/equipe/liberar.py NNN --sim --sem-publicar   # pedido sem mudança no add-in: só o merge
 ```
-PR sem mudança no add-in: acrescente `--sem-publicar` (só o merge). O script confere o placar (LIBERAR / MELHOR_VERSAO / decisão do diretor), leva o branch ao commit escolhido se
-preciso, espera o CI, faz o merge e dispara **Publicar versão**. Depois: confira a Release, comente no PR o link e
-avise o diretor (o que mudou, como testar no Revit, pendências).
+O script confere o placar, que o commit está no branch, a compilação verde e a versão; junta o commit ao `main`
+(merge do GitHub, sem PR),
+dispara **Publicar versão** e registra a liberação no pedido. Depois: quadro atualizado e enviado, e aviso ao
+diretor (o que mudou, roteiro de teste no Revit, critérios `(diretor)` a confirmar, pendências).
