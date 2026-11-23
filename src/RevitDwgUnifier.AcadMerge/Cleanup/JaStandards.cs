@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using Autodesk.AutoCAD.Colors;
 using Autodesk.AutoCAD.DatabaseServices;
@@ -38,9 +40,14 @@ namespace RevitDwgUnifier.AcadMerge.Cleanup
             var columnDefs = new HashSet<ObjectId>();
             var newHatches = new HashSet<ObjectId>();
             var guard = new InstallationGuard(o);    // building-services and furniture families are never exploded
-            int exploded = ExplodeColumns(db, columnLayers, guard, columnDefs, newHatches, out int failed);
-            int hatches = MoveColumnHatches(db, columnLayers, columnDefs, newHatches, hatchLayer, hatchColor);
-            int texts = MoveAreaTexts(db, textLayer, textColor, out int mixed);
+            // each part on its own: a column that fails to explode must not keep the area texts where they are
+            int exploded = 0, failed = 0, hatches = 0, texts = 0, mixed = 0;
+            try { exploded = ExplodeColumns(db, columnLayers, guard, columnDefs, newHatches, out failed); }
+            catch (Exception ex) { log.Warn("Padrão JA – pilares não explodidos: " + ex.Message); }
+            try { hatches = MoveColumnHatches(db, columnLayers, columnDefs, newHatches, hatchLayer, hatchColor); }
+            catch (Exception ex) { log.Warn("Padrão JA – hachuras de pilar não movidas: " + ex.Message); }
+            try { texts = MoveAreaTexts(db, textLayer, textColor, out mixed); }
+            catch (Exception ex) { log.Warn("Padrão JA – textos de área/PD não movidos: " + ex.Message); }
 
             log.Stat($"Padrão JA: {exploded} bloco(s) de pilar explodido(s)" + (failed > 0 ? $" ({failed} não puderam ser explodidos)" : "") +
                      $", {hatches} hachura(s) em '{hatchLayer}', {texts} texto(s) de PD/área em '{textLayer}'.");
@@ -269,7 +276,7 @@ namespace RevitDwgUnifier.AcadMerge.Cleanup
         {
             partial = false;
             if (string.IsNullOrWhiteSpace(raw)) return false;
-            string s = raw.Replace("\\U+00B2", "²").Replace("\\u+00b2", "²").Replace("%%178", "²").Replace("^", "");
+            string s = Normalizar(raw);
             if (s.Length > 120) return false;
             int hits = 0;
             s = PdToken.Replace(s, m => { hits++; return " "; });
@@ -278,6 +285,47 @@ namespace RevitDwgUnifier.AcadMerge.Cleanup
             if (Rest.Replace(s, "").Length == 0) return true;
             partial = true;
             return false;
+        }
+
+        private static readonly Regex UnicodeEsc = new Regex(@"\\[Uu]\+([0-9A-Fa-f]{4})", RegexOptions.CultureInvariant);
+        private static readonly Regex MTextStack = new Regex(@"\\S([^;]*);", RegexOptions.CultureInvariant);
+        private static readonly Regex MTextCode = new Regex(@"\\[ACFHQTWpfhqtwac][^;\\{}]*;|\\[LlOoKkNn]", RegexOptions.CultureInvariant);
+
+        /// <summary>
+        /// Plain text for the matching, whatever way the export wrote it: MText codes (fonts, heights, stacked
+        /// "m\S2^;"), \U+00B2 and %%178, "㎡", fullwidth digits, non-breaking and zero-width spaces, soft hyphens.
+        /// (NFKC turns "²" into "2" and "㎡" into "m2".)
+        /// </summary>
+        internal static string Normalizar(string raw)
+        {
+            if (string.IsNullOrEmpty(raw)) return "";
+            string s = UnicodeEsc.Replace(raw, m => ((char)Convert.ToInt32(m.Groups[1].Value, 16)).ToString());
+            s = s.Replace("%%178", "²").Replace("%%179", "³").Replace("\\~", " ").Replace("\\P", " ");
+            s = MTextStack.Replace(s, m => m.Groups[1].Value.Replace("^", "").Replace("#", "").Replace("/", ""));
+            s = MTextCode.Replace(s, "").Replace("{", "").Replace("}", "").Replace("^", "");
+            try { s = s.Normalize(NormalizationForm.FormKC); } catch (Exception) { }
+            var sb = new StringBuilder(s.Length);
+            foreach (char c in s)
+            {
+                UnicodeCategory cat = CharUnicodeInfo.GetUnicodeCategory(c);
+                if (cat == UnicodeCategory.Format || (cat == UnicodeCategory.Control && !char.IsWhiteSpace(c))) continue;
+                sb.Append(char.IsWhiteSpace(c) ? ' ' : c);
+            }
+            return sb.ToString();
+        }
+
+        /// <summary>For the log: the text with the hidden / unusual characters shown as &lt;U+XXXX&gt;.</summary>
+        private static string Mostrar(string raw)
+        {
+            var sb = new StringBuilder();
+            foreach (char c in raw ?? "")
+            {
+                UnicodeCategory cat = CharUnicodeInfo.GetUnicodeCategory(c);
+                bool comum = c >= ' ' && c < 0x7F || char.IsLetter(c) && c < 0x250 || c == '²' || c == '³' || c == 'º' || c == '°';
+                sb.Append(comum && cat != UnicodeCategory.Format ? c.ToString() : $"<U+{(int)c:X4}>");
+            }
+            string t = sb.ToString();
+            return t.Length > 100 ? t.Substring(0, 100) + "…" : t;
         }
 
         /// <summary>
@@ -334,6 +382,7 @@ namespace RevitDwgUnifier.AcadMerge.Cleanup
                         {
                             string plain;
                             try { plain = m.Text; } catch (Exception) { plain = m.Contents; }
+                            if (!IsAreaOrPd(plain, out _) && IsAreaOrPd(m.Contents, out _)) plain = m.Contents;   // codes m.Text kept
                             int antes = mixed;
                             n += Retag(tr, m, plain, layerId, ref mixed);
                             if (mixed > antes) misturados.Add(m.ObjectId);
@@ -414,14 +463,21 @@ namespace RevitDwgUnifier.AcadMerge.Cleanup
                 m.Explode(partes);
                 var textos = partes.OfType<DBText>().ToList();
                 if (textos.Count < 2) { foreach (DBObject o in partes) o.Dispose(); return 0; }
-                // lines: same baseline across the MText direction
+                // lines: the tallest pieces open the lines; smaller ones (a raised "²", a stacked "2") join the
+                // nearest line within 0.75 × its height
                 Vector3d dir = m.Direction.GetNormal(), nrm = m.Normal.CrossProduct(dir).GetNormal();
-                double tol = Math.Max(1e-6, textos.Min(x => x.Height) * 0.5);
+                Func<DBText, double> alt = x => (x.Position - m.Location).DotProduct(nrm);
                 var linhas = new List<List<DBText>>();
-                foreach (DBText t in textos.OrderByDescending(x => (x.Position - m.Location).DotProduct(nrm)))
+                foreach (DBText t in textos.OrderByDescending(x => x.Height))
                 {
-                    double y = (t.Position - m.Location).DotProduct(nrm);
-                    var l = linhas.FirstOrDefault(g => Math.Abs((g[0].Position - m.Location).DotProduct(nrm) - y) < tol);
+                    double y = alt(t);
+                    List<DBText> l = null;
+                    double melhor = double.MaxValue;
+                    foreach (var g in linhas)
+                    {
+                        double d = Math.Abs(alt(g[0]) - y);
+                        if (d < 0.75 * Math.Max(g[0].Height, 1e-9) && d < melhor) { l = g; melhor = d; }
+                    }
                     if (l == null) linhas.Add(l = new List<DBText>());
                     l.Add(t);
                 }
@@ -469,7 +525,7 @@ namespace RevitDwgUnifier.AcadMerge.Cleanup
         internal static List<string> Sobras(Database db, string layer, int max = 8)
         {
             var r = new List<string>();
-            var pista = new Regex(@"\d\s*m\s*(²|2|\\U\+00B2|%%178)|\bp\.?\s*d\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+            var pista = new Regex(@"\d\s*m\s*2|\bp\.?\s*d\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
             using (var tr = db.TransactionManager.StartTransaction())
             {
                 var bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
@@ -480,10 +536,20 @@ namespace RevitDwgUnifier.AcadMerge.Cleanup
                     foreach (ObjectId id in space)
                     {
                         if (r.Count >= max) break;
-                        if (!(tr.GetObject(id, OpenMode.ForRead) is Entity e) || string.Equals(e.Layer, layer, StringComparison.OrdinalIgnoreCase)) continue;
-                        string raw = e is DBText t ? t.TextString : e is MText m ? m.Contents : null;
-                        if (raw == null || !pista.IsMatch(raw)) continue;
-                        r.Add($"{e.GetType().Name} na layer '{e.Layer}' (bloco '{space.Name}'): «{(raw.Length > 80 ? raw.Substring(0, 80) + "…" : raw)}»");
+                        if (!(tr.GetObject(id, OpenMode.ForRead) is Entity e)) continue;
+                        var itens = new List<Entity> { e };
+                        if (e is BlockReference br && !(e is Table))
+                            foreach (ObjectId aid in br.AttributeCollection)
+                                if (tr.GetObject(aid, OpenMode.ForRead) is AttributeReference ar) itens.Add(ar);
+                        foreach (Entity x in itens)
+                        {
+                            if (r.Count >= max || string.Equals(x.Layer, layer, StringComparison.OrdinalIgnoreCase)) continue;
+                            string raw = x is DBText t ? t.TextString : x is MText m ? m.Contents : null;   // AttributeReference is a DBText
+                            if (raw == null || !pista.IsMatch(Normalizar(raw))) continue;
+                            IsAreaOrPd(raw, out bool misturado);
+                            r.Add($"{x.GetType().Name} na layer '{x.Layer}' (bloco '{space.Name}'" + (misturado ? ", misturado com outro texto" : "") +
+                                  $"): «{Mostrar(raw)}»");
+                        }
                     }
                 }
                 tr.Commit();
