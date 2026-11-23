@@ -1,0 +1,79 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    AutoCAD merge engine. It is NOT loaded into Revit: the Revit add-in launches
+    AutoCAD Core Console (accoreconsole.exe, headless) and NETLOADs this assembly.
+
+    The target framework MUST match the .NET runtime of the AutoCAD it runs in:
+      AutoCAD 2021-2024  -> net48            (R24.x)
+      AutoCAD 2025-2026  -> net8.0-windows   (R25.x)
+      AutoCAD 2027+      -> net10.0-windows  (R26.x)
+    build\build.ps1 detects this from acdbmgd.dll and passes -p:AcadTargetFramework=...;
+    manual build:  dotnet build -c Release -p:AcadVersion=2027
+    Only acdbmgd/accoremgd are referenced: acmgd.dll (full UI) is not available in Core Console.
+  -->
+  <PropertyGroup>
+    <AcadVersion Condition="'$(AcadVersion)' == ''">2025</AcadVersion>
+    <TargetFramework Condition="'$(AcadTargetFramework)' != ''">$(AcadTargetFramework)</TargetFramework>
+    <TargetFramework Condition="'$(AcadTargetFramework)' == '' And '$(AcadVersion)' &lt; '2025'">net48</TargetFramework>
+    <TargetFramework Condition="'$(AcadTargetFramework)' == '' And '$(AcadVersion)' &gt;= '2025' And '$(AcadVersion)' &lt; '2027'">net8.0-windows</TargetFramework>
+    <TargetFramework Condition="'$(AcadTargetFramework)' == '' And '$(AcadVersion)' &gt;= '2027'">net10.0-windows</TargetFramework>
+    <OutputType>Library</OutputType>
+    <RootNamespace>RevitDwgUnifier.AcadMerge</RootNamespace>
+    <AssemblyName>RevitDwgUnifier.AcadMerge</AssemblyName>
+    <AcadRefDir Condition="'$(AcadRefDir)' == ''">C:\Program Files\Autodesk\AutoCAD $(AcadVersion)</AcadRefDir>
+    <!-- Lands next to the Revit add-in so the Revit side can find it at runtime. -->
+    <!-- Folder under MergeEngine\: "R<release>-<tfm>" (build.ps1 passes -p:EngineFolder=R25-net8.0-windows ...). -->
+    <EngineFolder Condition="'$(EngineFolder)' == ''">$(TargetFramework)</EngineFolder>
+    <OutputPath>..\..\bin\$(Configuration)\MergeEngine\$(EngineFolder)\</OutputPath>
+  </PropertyGroup>
+
+  <!--
+    AutoCAD API: from the local AutoCAD install when it exists; otherwise from Autodesk's NuGet
+    packages AutoCAD.NET.Model (acdbmgd) and AutoCAD.NET.Core (accoremgd), reference only.
+    The oldest release of each runtime family is used, so the engine loads in all of them:
+      net48 -> 24.0.* (AutoCAD 2021, runs in 2021-2024)   net8 -> 25.0.* (2025-2026)   net10 -> 26.0.* (2027+)
+    Override with -p:AcadNuGetVersion=..., force with -p:UseAcadNuGet=true.
+  -->
+  <PropertyGroup>
+    <UseAcadNuGet Condition="'$(UseAcadNuGet)' == '' And !Exists('$(AcadRefDir)\acdbmgd.dll')">true</UseAcadNuGet>
+    <AcadNuGetVersion Condition="'$(AcadNuGetVersion)' == '' And '$(TargetFramework)' == 'net48'">24.0.*</AcadNuGetVersion>
+    <AcadNuGetVersion Condition="'$(AcadNuGetVersion)' == '' And '$(TargetFramework)' == 'net8.0-windows'">25.0.*</AcadNuGetVersion>
+    <AcadNuGetVersion Condition="'$(AcadNuGetVersion)' == ''">26.0.*</AcadNuGetVersion>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(UseAcadNuGet)' != 'true'">
+    <Reference Include="acdbmgd">
+      <HintPath>$(AcadRefDir)\acdbmgd.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="accoremgd">
+      <HintPath>$(AcadRefDir)\accoremgd.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(UseAcadNuGet)' == 'true'">
+    <PackageReference Include="AutoCAD.NET.Model" Version="$(AcadNuGetVersion)" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="AutoCAD.NET.Core" Version="$(AcadNuGetVersion)" ExcludeAssets="runtime" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- WinForms/System.Drawing: clipboard + bitmap work of the OLE pass (RVTOLE, full AutoCAD only). -->
+  <PropertyGroup Condition="'$(TargetFramework)' != 'net48'">
+    <UseWindowsForms>true</UseWindowsForms>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' != 'net48'">
+    <FrameworkReference Include="Microsoft.WindowsDesktop.App" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Shared\*.cs" Link="Shared\%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

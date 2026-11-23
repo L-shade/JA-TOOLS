@@ -1,0 +1,96 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    JA para Revit: ONE add-in assembly (JA.Revit.dll) with TWO ribbon tabs.
+      JAFamilias\   aba "JA Famílias"  (esquadrias, pedras, revestimentos, documentação)  namespace JAEsquadrias.*
+      JATools\      aba "JA Tools"     (modelagem, vistas, detalhamento, cotas, pranchas)  namespace RevitDwgUnifier.*
+      Comum\        what both tabs share (global aliases to the common window, catalog, preferences…)
+    The common base (ToolCommand, OptionsDialog, ResultDialog, ToolChrome, ToolCatalog, ToolPrefs,
+    HelpCenter, IconFactory, JaTheme, Logger, AddinLocation, ToolProgress…) is the JA Tools one,
+    used by both tabs. Two manifests entries (JA.addin) start the two tabs from this one DLL.
+    Build examples:
+      dotnet build -c Release -p:RevitVersion=2024
+      dotnet build -c Release -p:RevitVersion=2025
+    RevitAPI.dll / RevitAPIUI.dll come from the local Revit install when it exists, otherwise from
+    the NuGet packages Nice3point.Revit.Api.* (reference assemblies only, never copied).
+    The easy way: double click GerarInstalador.bat (builds 2024-2027 and the Setup.exe).
+  -->
+  <PropertyGroup>
+    <RevitVersion Condition="'$(RevitVersion)' == ''">2025</RevitVersion>
+    <!-- Must match Revit's own .NET runtime. build\build.ps1 detects it from RevitAPI.dll and
+         passes -p:RevitTargetFramework=...; the year mapping below is only the fallback. -->
+    <TargetFramework Condition="'$(RevitTargetFramework)' != ''">$(RevitTargetFramework)</TargetFramework>
+    <TargetFramework Condition="'$(RevitTargetFramework)' == '' And '$(RevitVersion)' &lt; '2025'">net48</TargetFramework>
+    <TargetFramework Condition="'$(RevitTargetFramework)' == '' And '$(RevitVersion)' &gt;= '2025' And '$(RevitVersion)' &lt; '2027'">net8.0-windows</TargetFramework>
+    <TargetFramework Condition="'$(RevitTargetFramework)' == '' And '$(RevitVersion)' &gt;= '2027'">net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <OutputType>Library</OutputType>
+    <RootNamespace>RevitDwgUnifier</RootNamespace>
+    <AssemblyName>JA.Revit</AssemblyName>
+    <DefineConstants>$(DefineConstants);REVIT$(RevitVersion)</DefineConstants>
+    <RevitInstallDir Condition="'$(RevitInstallDir)' == ''">C:\Program Files\Autodesk\Revit $(RevitVersion)</RevitInstallDir>
+    <OutputPath>..\..\bin\$(Configuration)\Revit$(RevitVersion)\JA\</OutputPath>
+    <!-- Set to true to copy the build straight into %AppData%\Autodesk\Revit\Addins\<ver> -->
+    <DeployToRevit Condition="'$(DeployToRevit)' == ''">false</DeployToRevit>
+  </PropertyGroup>
+
+  <!--
+    Revit API: from the local Revit install when it exists; otherwise from the NuGet packages
+    Nice3point.Revit.Api.* (reference assemblies only, never copied), so ONE build machine without
+    Revit produces the add-in for every version. Force with -p:UseRevitNuGet=true.
+  -->
+  <PropertyGroup>
+    <UseRevitNuGet Condition="'$(UseRevitNuGet)' == '' And !Exists('$(RevitInstallDir)\RevitAPI.dll')">true</UseRevitNuGet>
+    <RevitNuGetVersion Condition="'$(RevitNuGetVersion)' == ''">$(RevitVersion).*</RevitNuGetVersion>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(UseRevitNuGet)' != 'true'">
+    <Reference Include="RevitAPI">
+      <HintPath>$(RevitInstallDir)\RevitAPI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="RevitAPIUI">
+      <HintPath>$(RevitInstallDir)\RevitAPIUI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(UseRevitNuGet)' == 'true'">
+    <PackageReference Include="Nice3point.Revit.Api.RevitAPI" Version="$(RevitNuGetVersion)" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Nice3point.Revit.Api.RevitAPIUI" Version="$(RevitNuGetVersion)" ExcludeAssets="runtime" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Xaml" />
+    <!-- Orçamento, Lista para a Marmoraria and Exportar Tabelas write .xlsx (zip) without external libraries. -->
+    <Reference Include="System.IO.Compression" />
+  </ItemGroup>
+
+  <!-- Manifest contract shared with the AutoCAD merge engine (single source of truth). -->
+  <ItemGroup>
+    <Compile Include="..\Shared\*.cs" Link="Shared\%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\JA.addin" Link="JA.addin" CopyToOutputDirectory="Never" />
+  </ItemGroup>
+
+  <!-- JA Arquitetos Associados logo (ribbon, dialogs, Help Center), embedded in the DLL. -->
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\ja_mark.png" LogicalName="JATools.ja_mark.png" />
+    <EmbeddedResource Include="Resources\ja_logo.png" LogicalName="JATools.ja_logo.png" />
+  </ItemGroup>
+
+  <Target Name="DeployAddin" AfterTargets="Build" Condition="'$(DeployToRevit)' == 'true'">
+    <PropertyGroup>
+      <AddinRoot>$(AppData)\Autodesk\Revit\Addins\$(RevitVersion)</AddinRoot>
+    </PropertyGroup>
+    <ItemGroup>
+      <AddinBinaries Include="$(OutputPath)**\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="..\JA.addin" DestinationFolder="$(AddinRoot)" />
+    <Copy SourceFiles="@(AddinBinaries)" DestinationFolder="$(AddinRoot)\JA\%(RecursiveDir)" />
+    <Message Importance="high" Text="Deployed JA para Revit to $(AddinRoot)" />
+  </Target>
+</Project>

@@ -1,0 +1,27 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34330.188
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JA.Revit", "src\JA.Revit\JA.Revit.csproj", "{2585F7A9-D405-4325-A8FD-052E2C511857}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RevitDwgUnifier.AcadMerge", "src\RevitDwgUnifier.AcadMerge\RevitDwgUnifier.AcadMerge.csproj", "{773632E0-C15B-45A2-9EF6-EC395172148C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2585F7A9-D405-4325-A8FD-052E2C511857}.Debug|x64.ActiveCfg = Debug|x64
+		{2585F7A9-D405-4325-A8FD-052E2C511857}.Debug|x64.Build.0 = Debug|x64
+		{2585F7A9-D405-4325-A8FD-052E2C511857}.Release|x64.ActiveCfg = Release|x64
+		{2585F7A9-D405-4325-A8FD-052E2C511857}.Release|x64.Build.0 = Release|x64
+		{773632E0-C15B-45A2-9EF6-EC395172148C}.Debug|x64.ActiveCfg = Debug|x64
+		{773632E0-C15B-45A2-9EF6-EC395172148C}.Debug|x64.Build.0 = Debug|x64
+		{773632E0-C15B-45A2-9EF6-EC395172148C}.Release|x64.ActiveCfg = Release|x64
+		{773632E0-C15B-45A2-9EF6-EC395172148C}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5B0E2C7A-3F4D-4E19-A1B6-7C2D9E8F0A13}
+	EndGlobalSection
+EndGlobal

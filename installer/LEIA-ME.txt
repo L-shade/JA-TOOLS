@@ -1,0 +1,63 @@
+﻿JA PARA REVIT - INSTALADOR (abas JA Famílias e JA Tools)
+JA Arquitetos Associados
+======================================================================
+
+COMO INSTALAR
+  1. Feche o Revit.
+  2. Dê duplo clique em JA_Setup_<versão>.exe.
+  3. Na primeira tela escolha:
+       - "Somente para mim"  -> não pede senha de administrador;
+       - "Para todos os usuários" -> pede administrador (bom para PCs compartilhados).
+  4. Avance até o fim. Abra o Revit: as abas "JA Famílias" e "JA Tools" aparecem na faixa de opções.
+     Se o PC tinha os instaladores separados (JA Tools 1.x / JA Famílias 1.x), eles são
+     desinstalados automaticamente; preferências, bibliotecas e modelos ficam.
+
+  Instalação silenciosa (TI):  JA_Setup_<versão>.exe /VERYSILENT /ALLUSERS
+
+O QUE É INSTALADO (tudo vai junto, não precisa baixar mais nada)
+  - Os dois plug-ins (JA Famílias e JA Tools) para Revit 2024, 2025, 2026 e 2027
+    (só nas versões que o PC tem), com um único manifesto JA.addin.
+  - O motor de união do "DWG único" para AutoCAD 2021 a 2027.
+  - As famílias de detalhe típico do escritório (Det.Frontispício, Det.Saia,
+    Det.Tira Americana, Det.Tira Americana c.saia, Det. banca seca,
+    Det.Tento Simples, Det.Nicho Embutido), na pasta:
+       %AppData%\RevitDwgUnifier\Familias      (somente para mim)
+       %ProgramData%\RevitDwgUnifier\Familias  (todos os usuários)
+    O botão "Carregar famílias (.rfa)…" do Gerar Detalhes já abre essa pasta.
+    Essas famílias foram salvas no Revit 2026: carregam no 2026 e no 2027.
+
+  - Os identificadores (famílias de etiqueta) do escritório, na pasta
+       ...\RevitDwgUnifier\Identificadores
+    As ferramentas de etiqueta carregam o identificador certo de cada
+    categoria automaticamente. Famílias salvas no Revit 2026/2027 só
+    carregam nessas versões; nas anteriores fica a etiqueta padrão.
+
+  - Região de planta nas janelas altas (Detalhar Ambientes): o Revit não
+    deixa um plug-in criar região de planta do zero. Desenhe UMA região de
+    planta modelo em qualquer planta, com o plano de corte acima das janelas
+    altas (ex.: 2,10 m), e escreva JA em Comentários: o JA Tools copia essa
+    região para cada janela alta e redesenha o contorno em volta dela.
+
+REQUISITOS DO COMPUTADOR
+  - Windows 10 ou 11 (64 bits).
+  - Revit 2024, 2025, 2026 ou 2027.
+  - Para o "DWG único" do Exportar Pranchas: AutoCAD 2021 ou mais novo
+    (completo ou vertical, como o Civil 3D). O AutoCAD LT não serve.
+    Sem AutoCAD todo o resto funciona; o DWG sai um por prancha.
+  - .NET: o Revit 2024 usa o .NET Framework 4.8 que já vem no Windows;
+    o Revit 2025 em diante traz o próprio .NET.
+
+ATUALIZAR
+  Rode o instalador novo por cima. Modelos de ficha, preferências e
+  registros (logs) são mantidos.
+
+DESINSTALAR
+  Configurações do Windows > Aplicativos > Aplicativos instalados > JA para Revit
+  > Desinstalar  (ou Menu Iniciar > JA para Revit > Desinstalar JA para Revit).
+
+PROBLEMAS
+  - Menu Iniciar > JA para Revit > "Diagnostico" gera o arquivo
+    JATools_Diagnostico.txt na Área de Trabalho: envie-o ao suporte.
+  - A aba não aparece: confira se o Revit foi aberto depois da instalação e se
+    a versão do Revit é 2024 a 2027.
+  - Registro de erros: %LocalAppData%\RevitDwgUnifier\Logs

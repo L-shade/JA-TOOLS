@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    JA Visualizador IFC: programa Windows à parte (não roda dentro do Revit), no estilo do BIMcollab Zoom.
+    Abre .ifc e .ifczip (IFC2x3, IFC4, IFC4x3), vários modelos juntos; 3D, árvore do modelo, propriedades,
+    Smart Views (regras de filtro e cor), cortes e medições.
+    .NET Framework 4.8: já vem no Windows 10/11, nada para instalar. Sem pacotes externos: leitor STEP,
+    geometria (extrusões, breps, malhas, booleanas, aberturas) e visor (WPF Viewport3D) são nossos.
+      dotnet build -c Release src\JA.IfcViewer\JA.IfcViewer.csproj
+    Saída: bin\<Configuração>\VisualizadorIFC\JA.VisualizadorIFC.exe
+  -->
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <OutputType>WinExe</OutputType>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>JA.IfcViewer</RootNamespace>
+    <AssemblyName>JA.VisualizadorIFC</AssemblyName>
+    <Product>JA Visualizador IFC</Product>
+    <ApplicationIcon>..\..\installer\JATools.ico</ApplicationIcon>
+    <StartupObject>JA.IfcViewer.Program</StartupObject>
+    <OutputPath>..\..\bin\$(Configuration)\VisualizadorIFC\</OutputPath>
+    <Prefer32Bit>false</Prefer32Bit>
+    <!-- large models: up to the whole 64-bit address space -->
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
+    <Reference Include="System.Xaml" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  JA para Revit: one DLL (JA\JA.Revit.dll), two applications = two ribbon tabs (JA Famílias, JA Tools).
+  The AddInIds are the ones of the former separate add-ins (Revit keeps their "always load" choice).
+  Copy to: %AppData%\Autodesk\Revit\Addins\<2024|2025|2026|2027>\  with the folder JA\ next to it.
+-->
+<RevitAddIns>
+  <AddIn Type="Application">
+    <Name>JA Famílias</Name>
+    <Assembly>JA\JA.Revit.dll</Assembly>
+    <AddInId>4F9ED87E-AF25-456D-9EB2-0BDDAF624858</AddInId>
+    <FullClassName>JAEsquadrias.App</FullClassName>
+    <VendorId>JAAA</VendorId>
+    <VendorDescription>JA para Revit - JA Arquitetos Associados</VendorDescription>
+  </AddIn>
+  <AddIn Type="Application">
+    <Name>JA Tools</Name>
+    <Assembly>JA\JA.Revit.dll</Assembly>
+    <AddInId>48046ECB-ADA6-4253-ABC8-F95936C3D941</AddInId>
+    <FullClassName>RevitDwgUnifier.App</FullClassName>
+    <VendorId>JAAA</VendorId>
+    <VendorDescription>JA para Revit - JA Arquitetos Associados</VendorDescription>
+  </AddIn>
+</RevitAddIns>

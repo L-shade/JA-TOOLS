@@ -1,0 +1,13 @@
+# compilação
+bin/
+obj/
+dist/
+.vs/
+*.user
+build-log.txt
+__pycache__/
+*.pyc
+# cópias de segurança do Revit
+*.0001.rfa
+*.0002.rfa
+*.0001.rvt
