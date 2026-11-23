@@ -116,3 +116,6 @@ for v in res2:
     f = [x for x in res2[v] if not x[1]]
     print(f'== {v} (linha de ambiente): {len(res2[v]) - len(f)} ok, {len(f)} falha(s)')
     for nome, _, info in f: print('   FALHOU:', nome, info)
+# CI: the current engine is v2
+import sys
+sys.exit(1 if any(not x[1] for x in res.get('v2', []) + res2.get('v2', [])) else 0)

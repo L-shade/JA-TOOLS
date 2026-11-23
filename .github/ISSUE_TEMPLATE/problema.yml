@@ -1,0 +1,27 @@
+name: Problema
+description: Algo do JA não funcionou como deveria
+title: "[Problema] "
+labels: ["problema"]
+body:
+  - type: input
+    id: ferramenta
+    attributes: { label: Ferramenta, placeholder: "ex.: Rodapé no Local" }
+    validations: { required: true }
+  - type: input
+    id: versoes
+    attributes: { label: Versões, description: "Revit e JA (Central de Ajuda mostra a do JA)", placeholder: "Revit 2025, JA 2.6.0" }
+    validations: { required: true }
+  - type: textarea
+    id: passos
+    attributes: { label: O que você fez, description: "Passo a passo, opções escolhidas na janela" }
+    validations: { required: true }
+  - type: textarea
+    id: esperado
+    attributes: { label: O que esperava e o que aconteceu, description: "Cole imagens aqui (arraste o arquivo)" }
+    validations: { required: true }
+  - type: textarea
+    id: registro
+    attributes:
+      label: Registro / build-log
+      description: "Opcional: trecho do registro (%LOCALAPPDATA%\\RevitDwgUnifier\\Logs) ou do build-log.txt"
+      render: text

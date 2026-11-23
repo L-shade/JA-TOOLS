@@ -56,3 +56,5 @@ for e in erros:
     try: calc(e, C); print('DEVIA DAR ERRO', e)
     except (Erro, KeyError, ValueError): ok += 1
 print(f'{ok} de {len(casos) + len(erros)} ok')
+import sys
+sys.exit(0 if ok == len(casos) + len(erros) else 1)

@@ -131,7 +131,7 @@ namespace JA.IfcViewer.UI
             _tXRay = Ui.ToolToggle("Raio-X", Ui.Icons.XRay, "Tudo transparente, a seleção em destaque (X)", v => { _scene.XRay = v; _view.InvalidateAll(); });
             _tSpaces = Ui.ToolToggle("Ambientes", Ui.Icons.Spaces, "Mostrar os ambientes (IfcSpace)", v => { _scene.ShowSpaces = v; ApplySmartView(_svPanel.Active); });
             sp.Children.Add(Ui.Group("Visibilidade",
-                Ui.Tool("Ocultar", Ui.Icons.Hide, "Ocultar a seleção (H ou Delete)", Hide),
+                Ui.Tool("Ocultar", Ui.Icons.Hide, "Ocultar a seleção (H ou Delete)", OcultarSelecao),
                 Ui.Tool("Isolar", Ui.Icons.Isolate, "Mostrar só a seleção (I)", Isolate),
                 Ui.Tool("Mostrar", Ui.Icons.Show, "Mostrar tudo de novo (Shift+H)", ShowAll),
                 Ui.Tool("Transp.", Ui.Icons.Transparent, "Seleção transparente / opaca (T)", ToggleTransparent),
@@ -516,7 +516,7 @@ namespace JA.IfcViewer.UI
 
         // ================================================================== visibility
 
-        private void Hide()
+        private void OcultarSelecao()
         {
             if (_scene.Selection.Count == 0) { Status("Selecione o que ocultar."); return; }
             var sel = _scene.Selection.ToList();
@@ -662,7 +662,7 @@ namespace JA.IfcViewer.UI
             }
             bool sel = _scene.Selection.Count > 0;
             IfcObject o = i >= 0 ? _scene.Objects[i] : null;
-            Add("Ocultar", Hide, "H", sel);
+            Add("Ocultar", OcultarSelecao, "H", sel);
             Add("Isolar", Isolate, "I", sel);
             Add("Transparente / opaco", ToggleTransparent, "T", sel);
             Add("Mostrar tudo", ShowAll, "Shift+H");
@@ -699,7 +699,7 @@ namespace JA.IfcViewer.UI
                     else Select(new int[0], false);
                     break;
                 case Key.H when shift: ShowAll(); break;
-                case Key.H: case Key.Delete: Hide(); break;
+                case Key.H: case Key.Delete: OcultarSelecao(); break;
                 case Key.I: Isolate(); break;
                 case Key.T: ToggleTransparent(); break;
                 case Key.F: FitSelection(); break;

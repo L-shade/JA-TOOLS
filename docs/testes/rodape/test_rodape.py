@@ -174,3 +174,6 @@ for v in ('atual', 'nova'):
 fal = [x for x in r if not x[1]]
 print(f'== no local: {len(r) - len(fal)} ok, {len(fal)} falha(s)')
 for nome, _, info in fal: print('   FALHOU:', nome, info)
+# CI: the current engine is 'nova' ('atual' = the old one, kept for comparison)
+import sys
+sys.exit(1 if any(not x[1] for x in res['nova']) or any(not x[1] and not x[0].startswith('atual') for x in r) else 0)
