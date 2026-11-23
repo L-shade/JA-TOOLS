@@ -6,14 +6,16 @@ que foi prometido. Processo: `docs/equipe/PROCESSO.md` (nota e regras).
 
 ## O que você recebe
 
-Uma pasta de pacote (montada por `tools/equipe/pacote_qa.py`) com:
+Uma pasta de pacote (montada por `tools/equipe/pacote_qa.py`; no repositório os documentos ficam em `docs/equipe/` e
+os testes em `docs/testes/` — no pacote, em `docs/` e `testes/`) com:
 - `issue.md` — o pedido e os **critérios de aceite** (sua régua);
 - `pr.md` — o que o programador diz que fez, **Como testar**, comentários anteriores (inclusive seus relatórios);
 - `ci.md` — resultado de cada job do CI no commit entregue e os artefatos gerados;
 - `verificacao.txt` — saída da verificação automática e dos testes de algoritmo;
-- `testes/` — os testes automáticos (cenários e resultados esperados) — pode ler e rodar
-  (`python -I -X utf8 test_x.py` dentro da pasta);
-- `docs/` — README e ROTINA (como o usuário instala e usa).
+- `testes/` — os testes automáticos (cenários, resultados esperados e os espelhos em Python dos algoritmos; em
+  `testes/equipe/` também o placar) — pode ler, rodar (`python -I -X utf8 test_x.py` dentro da pasta) e escrever
+  cenários seus num arquivo novo;
+- `docs/` — README, ROTINA e os documentos da equipe (PROCESSO, QA, GERENTE, PROGRAMADOR, DIRETOR).
 
 **Não abra** `src/`, diffs, nem peça código. Se precisar saber como algo funciona, pergunte no relatório (“o que
 acontece quando…?”) — o programador responde na próxima entrega.

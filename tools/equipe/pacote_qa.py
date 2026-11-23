@@ -2,7 +2,9 @@
 """Monta o pacote do QA (docs/equipe/QA.md): tudo o que um testador de fora veria, SEM código-fonte.
 
 Uso:  python tools/equipe/pacote_qa.py --pr 12 [--saida /tmp/qa-12] [--repo dono/repo]
-Gera: issue.md, pr.md, ci.md, verificacao.txt, testes/ (docs/testes), docs/ (README, ROTINA).
+Gera: issue.md, pr.md, ci.md, verificacao.txt, testes/ (docs/testes + o placar, para os testes rodarem),
+      docs/ (README, ROTINA e docs/equipe/*.md).
+Os testes de algoritmo levam seus espelhos em Python (são testes, não o add-in); C#/XAML/PS1 nunca vão.
 """
 import json, os, re, shutil, subprocess, sys
 
@@ -81,8 +83,12 @@ def main():
 
     shutil.copytree(os.path.join(RAIZ, 'docs', 'testes'), os.path.join(saida, 'testes'),
                     ignore=shutil.ignore_patterns('__pycache__'))
-    for arq in ('README.md', os.path.join('docs', 'ROTINA.md')):
+    shutil.copy(os.path.join(RAIZ, 'tools', 'equipe', 'consenso.py'), os.path.join(saida, 'testes', 'equipe'))
+    equipe = os.path.join(RAIZ, 'docs', 'equipe')
+    for arq in ['README.md', os.path.join('docs', 'ROTINA.md')] + [os.path.join('docs', 'equipe', x) for x in sorted(os.listdir(equipe)) if x.endswith('.md')]:
         if os.path.exists(os.path.join(RAIZ, arq)): shutil.copy(os.path.join(RAIZ, arq), os.path.join(saida, 'docs'))
+    proibidos = [os.path.join(r, f) for r, _, fs in os.walk(saida) for f in fs if f.lower().endswith(('.cs', '.xaml', '.ps1', '.csproj', '.sln'))]
+    if proibidos: raise RuntimeError('o pacote do QA não pode ter código do add-in: ' + ', '.join(proibidos))
     print(saida)
     return 0
 

@@ -49,6 +49,6 @@ Não suba a versão de novo. Depois da 3ª avaliação sem consenso o placar esc
 python tools/equipe/liberar.py --pr <PR>            # mostra o que vai fazer
 python tools/equipe/liberar.py --pr <PR> --sim      # faz: merge do commit escolhido + Publicar versão
 ```
-O script confere o placar (LIBERAR / MELHOR_VERSAO / decisão do diretor), leva o branch ao commit escolhido se
+PR sem mudança no add-in: acrescente `--sem-publicar` (só o merge). O script confere o placar (LIBERAR / MELHOR_VERSAO / decisão do diretor), leva o branch ao commit escolhido se
 preciso, espera o CI, faz o merge e dispara **Publicar versão**. Depois: confira a Release, comente no PR o link e
 avise o diretor (o que mudou, como testar no Revit, pendências).

@@ -28,7 +28,7 @@ trabalho é deixar o pedido claro, verificável e acompanhado. Processo completo
    - **Prioridade** — alta / normal / baixa, e por quê.
 4. Diga ao Diretor, em 2–3 linhas, o número da Issue e os critérios. Ele aprova ou corrige.
 5. Avise o programador: o Diretor diz na conversa do programador “tem a Issue #N”. (Comentar na Issue também ajuda:
-   “@programador: pronto para desenvolver”.)
+   “programador: pronto para desenvolver” — sem `@`, que notificaria uma conta real do GitHub.)
 
 ## Acompanhando
 

@@ -1231,6 +1231,11 @@ Grupos do `ToolCatalog` = painéis (Esquadrias, Pedras e Nichos, Gerenciar, Docu
     0–100 (critérios 60, robustez 15, clareza 10, regressão 15); APROVADO só com ≥ 80 e sem crítico/grave.
     Limite honesto: o QA não roda o Revit; o que depende dele vira "não verificado" e roteiro para o diretor.
     O usuário autorizou o Claude a fazer sozinho merges, workflows e comentários no GitHub.
+    Primeiro ensaio (PR #7): o QA reprovou a iteração 1 (58) com 3 graves — regra de versão para PR sem mudança no
+    add-in, 3ª iteração sem chance de consenso e melhor versão podendo passar REPROVADO na frente de APROVADO, pacote
+    sem o placar. Iteração 2: `--sem-publicar`; na 3ª espera a posição; APROVADO vence REPROVADO; APROVADO < 80 vale
+    REPROVADO; posição com commit errado não vale; blocos em ``` / citação não contam; iteração 4 ignorada; RETOMAR;
+    pacote leva o placar e docs/equipe e recusa C#/XAML/PS1; cenários do QA adotados (test_consenso_qa.py).
 
 ### Pedidos em aberto
 20. ~~Painéis de parede cortina~~ — feito na 1.9.0 (item 57).

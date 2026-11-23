@@ -37,16 +37,20 @@ mudar o pedido (o gerente atualiza a Issue e a contagem de iterações continua)
 ## Regras
 
 1. **Uma Issue = um PR = uma versão.** Iterações são commits novos no mesmo PR; a versão (`tools/versao.py`) sobe
-   uma vez, na iteração 1.
+   uma vez, na iteração 1. **PR que não muda o add-in** (processo, documentação, CI): não sobe versão, e a liberação é
+   só o merge (`liberar.py --sem-publicar`), sem Publicar versão.
 2. **Consenso** = os dois blocos da mesma iteração e do mesmo commit: QA `APROVADO` e programador `CONCORDO`.
    A posição do programador só vale depois do relatório do QA daquela iteração.
-3. **APROVADO** exige nota ≥ 80 e nenhum defeito crítico ou grave aberto. O QA não aprova o que não conseguiu
+3. **APROVADO** exige nota ≥ 80 e nenhum defeito crítico ou grave aberto (o placar trata APROVADO com nota < 80
+   como REPROVADO). O QA não aprova o que não conseguiu
    verificar: o que depende do Revit vira roteiro para o diretor e conta como "não verificado".
-4. **Máximo de 3 iterações.** Depois da terceira avaliação sem consenso, vale o commit de **maior nota** (empate:
-   o mais novo). As pendências desse commit vão para uma Issue nova (o gerente abre).
+4. **Máximo de 3 iterações.** Na 3ª o consenso ainda vale. Se a 3ª fechar (relatório + posição) sem consenso, vale
+   a **melhor versão**: um APROVADO vence qualquer REPROVADO; entre iguais, a maior nota; empate, a mais nova. As pendências desse commit vão para uma Issue nova (o gerente abre).
 5. O CI (**Verificar e compilar**) tem de estar verde no commit entregue; sem isso não é entrega.
-6. O QA nunca recebe código-fonte. Recebe o pacote: Issue, PR (texto e comentários), resultado do CI, artefatos,
-   saída da verificação e dos testes automáticos, README/ROTINA.
+6. O QA nunca recebe código do add-in (C#, XAML, PowerShell, projetos). Recebe o pacote: Issue, PR (texto e
+   comentários, sem trechos de código), resultado do CI, artefatos, saída da verificação, os testes automáticos (com
+   os espelhos em Python dos algoritmos e o placar: são testes, para ele rodar e criar cenários), README, ROTINA e
+   estes documentos. O `pacote_qa.py` recusa montar um pacote com código do add-in.
 7. Tudo em português, curto. Comentários com os blocos abaixo — o placar só lê os blocos.
 
 ## Blocos (copie e preencha; ficam invisíveis no GitHub)
@@ -94,12 +98,26 @@ motivo: ...
 | Sem regressão | 15 | CI verde, verificação 0 erro, testes automáticos passando, nada que funcionava quebrou |
 
 Defeito **crítico** (perde trabalho, trava o Revit, resultado errado silencioso) → REPROVADO e nota máxima 40.
-Defeito **grave** (critério de aceite falha) → REPROVADO. **Menor** (texto, detalhe) → −3 cada, não reprova sozinho.
+Defeito **grave** (critério de aceite falha) → REPROVADO e nota máxima 79. **Menor** (texto, detalhe) → −3 cada, no
+total, não reprova sozinho. Critério **parcial** vale metade dos seus pontos.
+
+## Perguntas frequentes
+
+- **Quem postou o bloco?** Todas as conversas usam a mesma conta do GitHub: o placar confia no protocolo (cada papel
+  só posta o seu bloco). O diretor confere pelo histórico do PR.
+- **O que conta como bloco?** Só blocos `<!-- JA-… -->` fora de ``` e fora de citações (`> `), em comentários do PR,
+  com iteração de 1 a 3. Vale o último de cada papel por iteração. Um relatório novo do QA derruba a posição anterior.
+- **Commit:** prefixo de 7+ caracteres; a posição do programador tem de citar o mesmo commit do relatório.
+  O mesmo commit pode aparecer em duas iterações (o programador provou que o QA errou sem mudar o código).
+- **Diretor:** `PARAR` congela; `RETOMAR` volta ao placar normal; `LIBERAR` sem `commit:` libera a cabeça do PR.
+- **Etiquetas** (`pedido`, `pronto-para-dev`, `em-dev`, `em-qa`, `consenso`, `melhor-versao`, `iteracao-N`…) já
+  existem; o placar é **um** comentário, editado a cada mudança, pelo workflow **Placar da equipe**.
 
 ## Comandos
 
 ```bash
 python tools/equipe/consenso.py --pr 12              # mostra o placar
 python tools/equipe/pacote_qa.py --pr 12 --saida /tmp/qa-12   # monta o pacote do QA (sem código)
-python tools/equipe/liberar.py --pr 12               # confere o placar e libera (merge + Publicar versão)
+python tools/equipe/liberar.py --pr 12 --sim         # confere o placar e libera (merge + Publicar versão)
+python tools/equipe/liberar.py --pr 12 --sim --sem-publicar   # PR sem mudança no add-in: só o merge
 ```

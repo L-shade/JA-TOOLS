@@ -12,7 +12,9 @@ Decisão:
   LIBERAR        QA APROVADO + programador CONCORDO na mesma iteração e no mesmo commit.
   MELHOR_VERSAO  3 iterações avaliadas sem consenso: vale o commit de maior nota (empate: o mais novo).
   AGUARDANDO_QA / AGUARDANDO_PROGRAMADOR / NOVA_ITERACAO  enquanto isso.
-O diretor pode decidir outra coisa a qualquer momento (bloco JA-DIRETOR decisao: LIBERAR|PARAR, commit: ...).
+O diretor pode decidir outra coisa a qualquer momento (bloco JA-DIRETOR decisao: LIBERAR|PARAR|RETOMAR, commit: ...).
+Não contam: blocos dentro de ``` ou de citação (> ), iterações acima de 3, APROVADO com nota < 80 (vale REPROVADO),
+posição do programador com commit diferente do relatório.
 
 Uso:  python tools/equipe/consenso.py --pr 12 [--repo dono/repo] [--publicar]
       --publicar: comenta o placar no PR (atualiza o comentário anterior) e põe as etiquetas.
@@ -27,10 +29,15 @@ ETIQUETAS = {'LIBERAR': 'consenso', 'MELHOR_VERSAO': 'melhor-versao', 'DIRETOR':
 _BLOCO = re.compile(r'<!--\s*JA-(ENTREGA|QA|PROGRAMADOR|DIRETOR)\b(.*?)-->', re.S | re.I)
 
 
+_CERCA = re.compile(r'```.*?(?:```|$)', re.S)
+
+
 def blocos(texto):
     """Todos os blocos JA-* de um comentário, como dicionários (papel, iteracao, commit, ...)."""
     saida = []
-    for m in _BLOCO.finditer(texto or ''):
+    texto = _CERCA.sub('', texto or '')                                                  # exemplos em ``` não contam
+    texto = '\n'.join(l for l in texto.splitlines() if not l.lstrip().startswith('>'))   # nem citações
+    for m in _BLOCO.finditer(texto):
         d = {'papel': m.group(1).upper()}
         for campo, valor in re.findall(r'(\w+)\s*:\s*([^\n]+)', m.group(2)):
             d[campo.lower()] = valor.strip()
@@ -57,10 +64,15 @@ def decidir(comentarios):
     for c in comentarios:
         for b in blocos(c):
             i = b['iteracao']
-            if b['papel'] == 'ENTREGA' and i > 0: entrega[i] = b
-            elif b['papel'] == 'QA' and i > 0: qa[i] = b; prog.pop(i, None)   # nova avaliação: posição antiga não vale
-            elif b['papel'] == 'PROGRAMADOR' and i > 0 and i in qa: prog[i] = b
-            elif b['papel'] == 'DIRETOR' and b.get('decisao'): diretor = b
+            if b['papel'] == 'DIRETOR' and b.get('decisao'):
+                diretor = None if b['decisao'] == 'RETOMAR' else b
+                continue
+            if not 0 < i <= MAX_ITERACOES: continue                       # iteração 4+ não existe
+            if b['papel'] == 'ENTREGA': entrega[i] = b
+            elif b['papel'] == 'QA':
+                if b.get('veredito') == 'APROVADO' and (b.get('nota') or 0) < 80: b['veredito'] = 'REPROVADO'
+                qa[i] = b; prog.pop(i, None)                              # nova avaliação: posição antiga não vale
+            elif b['papel'] == 'PROGRAMADOR' and i in qa and _mesmo(b['commit'], qa[i]['commit']): prog[i] = b
     historico = []
     for i in sorted(set(qa) | set(prog) | set(entrega)):
         q, p, e = qa.get(i), prog.get(i), entrega.get(i)
@@ -80,9 +92,9 @@ def decidir(comentarios):
                      motivo=f"QA aprovou e o programador concorda na iteração {h['iteracao']}")
             return r
     avaliadas = [h for h in historico if h['veredito']]
-    if len(avaliadas) >= MAX_ITERACOES or (avaliadas and max(h['iteracao'] for h in avaliadas) >= MAX_ITERACOES
-                                           and prog.get(max(h['iteracao'] for h in avaliadas))):
-        melhor = max(avaliadas, key=lambda h: (h['nota'] or 0, h['iteracao']))
+    if MAX_ITERACOES in qa and MAX_ITERACOES in prog:                 # a 3ª fechou (relatório + posição) sem consenso
+        # aprovado antes de reprovado; depois a nota; empate: a mais nova
+        melhor = max(avaliadas, key=lambda h: (h['veredito'] == 'APROVADO', h['nota'] or 0, h['iteracao']))
         r.update(status='MELHOR_VERSAO', iteracao=melhor['iteracao'], commit=melhor['commit'], nota=melhor['nota'],
                  motivo=f"{len(avaliadas)} iterações sem consenso: vale a de maior nota (iteração {melhor['iteracao']})")
         return r
@@ -95,6 +107,8 @@ def decidir(comentarios):
     elif not u['posicao']:
         r.update(status='AGUARDANDO_PROGRAMADOR', commit=u['commit'], nota=u['nota'],
                  motivo=f"QA {u['veredito']} ({u['nota']:.0f}) na iteração {u['iteracao']}; falta a posição do programador")
+    elif u['iteracao'] >= MAX_ITERACOES:
+        r.update(status='AGUARDANDO_PROGRAMADOR', commit=u['commit'], motivo='iteração 3: falta a posição do programador')
     else:
         r.update(status='NOVA_ITERACAO', iteracao=u['iteracao'] + 1, commit=u['commit'],
                  motivo=f"sem consenso na iteração {u['iteracao']} (QA {u['veredito']}, programador {u['posicao']}); "
