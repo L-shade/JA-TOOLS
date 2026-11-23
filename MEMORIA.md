@@ -1207,6 +1207,12 @@ Grupos do `ToolCatalog` = painéis (Esquadrias, Pedras e Nichos, Gerenciar, Docu
     (textos fixos de etiqueta) também; (4) `InstallationMover` não tira mais nada da layer de área; (5) o registro da
     exportação lista os textos com cara de área/PD que ficaram fora (`Sobras`). Teste: docs/testes/padrao_ja/test_area.py
     (espelho do IsAreaOrPd). Primeira versão feita pela rotina do GitHub (CI compilou).
+108. 23/11/2026 — "crie uma página fixa de download". Página = Releases do GitHub. O workflow **Publicar versão**
+    agora anexa os arquivos à Release se ela já existir (criada pelo site em Releases › Draft a new release, com a
+    etiqueta vX.Y.Z no main) e, se não existir, cria. Além de `JA_Setup_X.Y.Z.exe` e do zip, anexa cópias com nome
+    fixo (`JA_Setup.exe`, `JA_Instalador.zip`): o link
+    https://github.com/L-shade/JA-TOOLS/releases/latest/download/JA_Setup.exe baixa sempre a última versão
+    (está no README). Sem mudança no add-in (continua 2.6.1).
 
 ### Pedidos em aberto
 20. ~~Painéis de parede cortina~~ — feito na 1.9.0 (item 57).

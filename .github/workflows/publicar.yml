@@ -67,5 +67,17 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $v = "${{ steps.versao.outputs.versao }}"
-          $notas = "Instalador do **JA para Revit $v** (abas JA Famílias e JA Tools, Revit 2024–2027).`n`nBaixe ``JA_Instalador_$v.zip``, extraia e rode ``JA_Setup_$v.exe``. O que mudou: veja o MEMORIA.md."
-          gh release create "v$v" "dist/JA_Instalador_$v.zip" "dist/Instalador/JA_Setup_$v.exe" --title "JA para Revit $v" --notes "$notas" --generate-notes
+          # Cópias com nome fixo: https://github.com/L-shade/JA-TOOLS/releases/latest/download/JA_Setup.exe
+          # sempre baixa a última versão.
+          Copy-Item "dist/Instalador/JA_Setup_$v.exe" "dist/JA_Setup.exe"
+          Copy-Item "dist/JA_Instalador_$v.zip" "dist/JA_Instalador.zip"
+          $arquivos = @("dist/JA_Instalador_$v.zip", "dist/Instalador/JA_Setup_$v.exe", "dist/JA_Setup.exe", "dist/JA_Instalador.zip")
+          $notas = "Instalador do **JA para Revit $v** (abas JA Famílias e JA Tools, Revit 2024–2027).`n`nBaixe ``JA_Setup_$v.exe`` e rode com o Revit fechado (ou ``JA_Instalador_$v.zip``, para enviar por e-mail). O que mudou: veja o MEMORIA.md."
+          # A Release pode já existir (criada pelo site, em Releases › Draft a new release): então só anexa os arquivos.
+          gh release view "v$v" *> $null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload "v$v" @arquivos --clobber
+          } else {
+            gh release create "v$v" @arquivos --title "JA para Revit $v" --notes "$notas" --generate-notes --latest
+          }
+          if ($LASTEXITCODE -ne 0) { throw "Falha ao publicar a Release v$v." }

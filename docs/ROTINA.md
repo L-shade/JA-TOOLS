@@ -53,7 +53,15 @@ git tag v2.6.1 && git push origin v2.6.1  ──► "Publicar versão": instalad
 3. Uma armadilha nova de compilação ou do Revit vira uma verificação em `tools/verificar/verificar.py`, para não
    voltar.
 4. Algoritmos (rodapé, fórmulas, geometria) mudam junto com o seu teste em `docs/testes/`.
-5. Publicar = etiqueta `vX.Y.Z` igual à versão do `Directory.Build.props`.
+5. Publicar = etiqueta `vX.Y.Z` igual à versão do `Directory.Build.props`: pelo git (acima) ou pelo site, em
+   **Releases › Draft a new release** (etiqueta `vX.Y.Z` nova, alvo `main`, *Publish release*). Em ~15 min o
+   workflow anexa `JA_Setup_X.Y.Z.exe`, o zip e as cópias de nome fixo.
+
+## Página de download
+
+- Todas as versões: https://github.com/L-shade/JA-TOOLS/releases
+- Sempre a última: https://github.com/L-shade/JA-TOOLS/releases/latest/download/JA_Setup.exe (link fixo para
+  mandar ao escritório; também no README).
 
 ## Sem o GitHub
 
