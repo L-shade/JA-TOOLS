@@ -1,0 +1,29 @@
+name: Pedido da equipe (gerente)
+description: Pedido do diretor com critérios de aceite — entra no processo docs/equipe/PROCESSO.md
+title: "[Pedido] "
+labels: ["pedido", "pronto-para-dev"]
+body:
+  - type: textarea
+    id: objetivo
+    attributes: { label: Objetivo, description: "Uma frase, nas palavras do diretor" }
+    validations: { required: true }
+  - type: textarea
+    id: contexto
+    attributes: { label: Contexto, description: "Onde aparece, imagens, versão do Revit/JA, itens do MEMORIA relacionados" }
+  - type: textarea
+    id: criterios
+    attributes:
+      label: Critérios de aceite
+      description: "3 a 8, numerados, cada um verificável sem ler código; ao menos um de não regressão"
+      value: |
+        1. 
+        2. 
+        3. (não regressão) 
+    validations: { required: true }
+  - type: textarea
+    id: fora
+    attributes: { label: Fora do escopo }
+  - type: dropdown
+    id: prioridade
+    attributes: { label: Prioridade, options: [alta, normal, baixa] }
+    validations: { required: true }

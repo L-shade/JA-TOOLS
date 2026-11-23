@@ -1221,6 +1221,17 @@ Grupos do `ToolCatalog` = painéis (Esquadrias, Pedras e Nichos, Gerenciar, Docu
     no main (Run workflow) agora também publica: cria a Release vX.Y.Z da versão atual ou anexa os arquivos à que
     existe (a v2.6.1 ficou na etiqueta 3945a18; o add-in é o mesmo, só mudou CI/documentação).
 
+110. 23/11/2026 — "estrutura com gerente (outra conversa), diretor (eu), programador (esta conversa) e QA (agente que
+    não conhece o código); libera quando os dois entram em consenso; senão, depois da 3ª iteração, a melhor versão".
+    `docs/equipe/` (PROCESSO, GERENTE, PROGRAMADOR, QA, DIRETOR); `tools/equipe/consenso.py` (placar pelos blocos
+    JA-ENTREGA / JA-QA / JA-PROGRAMADOR / JA-DIRETOR nos comentários do PR; teste docs/testes/equipe/test_consenso.py),
+    `pacote_qa.py` (pacote sem código: Issue, PR, CI, verificação, testes, README), `liberar.py` (merge do commit
+    escolhido + Publicar versão); workflow **Placar da equipe** (atualiza o comentário e as etiquetas a cada bloco);
+    agente `.claude/agents/qa-ja.md`; modelo de Issue **Pedido da equipe** e PR com "Como testar" para o QA. Nota do QA
+    0–100 (critérios 60, robustez 15, clareza 10, regressão 15); APROVADO só com ≥ 80 e sem crítico/grave.
+    Limite honesto: o QA não roda o Revit; o que depende dele vira "não verificado" e roteiro para o diretor.
+    O usuário autorizou o Claude a fazer sozinho merges, workflows e comentários no GitHub.
+
 ### Pedidos em aberto
 20. ~~Painéis de parede cortina~~ — feito na 1.9.0 (item 57).
 21. ~~Folha "solta" na planta~~ — conferência automática + Conferir Planta na 1.9.0 (item 58); aguardando o

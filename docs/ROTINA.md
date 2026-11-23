@@ -31,6 +31,10 @@ versão: python tools/versao.py patch  +  item no MEMORIA.md
 git tag v2.6.1 && git push origin v2.6.1  ──► "Publicar versão": instalador + Release no GitHub
 ```
 
+## Equipe
+
+Pedidos grandes seguem o processo com gerente, programador e QA: [docs/equipe/PROCESSO.md](equipe/PROCESSO.md).
+
 ## Como pedir
 
 - **Problema:** abra uma Issue com o modelo *Problema*: ferramenta, versão do Revit e do JA, o que fez, o que

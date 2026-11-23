@@ -23,6 +23,14 @@ compilado (pela execução do GitHub Actions) e como testar.
 5. Pull request para o `main`; publicar = etiqueta `vX.Y.Z` (workflow **Publicar versão**).
 6. Uma armadilha nova vira verificação em `tools/verificar/verificar.py`.
 
+## Equipe (docs/equipe/PROCESSO.md)
+- Papéis: Diretor (usuário), Gerente (outra conversa, abre Issues `pedido`), **Programador (a conversa com o
+  código — siga docs/equipe/PROGRAMADOR.md)**, QA (agente `qa-ja`, sem ver o código, recebe só o pacote de
+  `tools/equipe/pacote_qa.py`).
+- Liberar só com o placar (`tools/equipe/consenso.py`): QA APROVADO + programador CONCORDO no mesmo commit; após 3
+  iterações sem consenso, o commit de maior nota. Liberação: `tools/equipe/liberar.py --pr N --sim`.
+- O usuário autorizou o Claude a fazer sozinho as operações do GitHub (merge, disparar workflows, comentários).
+
 ## Armadilhas já vistas (C#)
 - `Group` ambíguo (Autodesk.Revit.DB × System.Text.RegularExpressions): use `Autodesk.Revit.DB.Group`.
 - Grupos de métodos (`Select(Clean)`) sobrevivem a renomeações: procure ao mover métodos.

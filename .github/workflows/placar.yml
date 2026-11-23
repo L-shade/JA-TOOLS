@@ -1,0 +1,35 @@
+# Placar da equipe (docs/equipe/PROCESSO.md): a cada comentário num PR com um bloco JA-ENTREGA / JA-QA /
+# JA-PROGRAMADOR / JA-DIRETOR, recalcula o consenso, atualiza o comentário "Placar da equipe" e as etiquetas.
+name: Placar da equipe
+
+on:
+  issue_comment:
+    types: [created, edited]
+  workflow_dispatch:
+    inputs:
+      pr: { description: 'Número do PR', required: true }
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: placar-${{ github.event.issue.number || inputs.pr }}
+
+jobs:
+  placar:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.issue.pull_request && contains(github.event.comment.body, '<!-- JA-') &&
+       !contains(github.event.comment.body, '<!-- JA-CONSENSO -->'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Placar
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PYTHONUTF8: '1'
+        run: |
+          python tools/equipe/consenso.py --pr "${{ github.event.issue.number || inputs.pr }}" --publicar >> "$GITHUB_STEP_SUMMARY"
