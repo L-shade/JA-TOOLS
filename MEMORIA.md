@@ -1221,6 +1221,30 @@ Grupos do `ToolCatalog` = painéis (Esquadrias, Pedras e Nichos, Gerenciar, Docu
     no main (Run workflow) agora também publica: cria a Release vX.Y.Z da versão atual ou anexa os arquivos à que
     existe (a v2.6.1 ficou na etiqueta 3945a18; o add-in é o mesmo, só mudou CI/documentação).
 
+110. 23/11/2026 — "estrutura com gerente (outra conversa), diretor (eu), programador (esta conversa) e QA (agente que
+    não conhece o código); libera quando os dois entram em consenso; senão, depois da 3ª iteração, a melhor versão".
+    `docs/equipe/` (PROCESSO, GERENTE, PROGRAMADOR, QA, DIRETOR); `tools/equipe/consenso.py` (placar pelos blocos
+    JA-ENTREGA / JA-QA / JA-PROGRAMADOR / JA-DIRETOR nos comentários do PR; teste docs/testes/equipe/test_consenso.py),
+    `pacote_qa.py` (pacote sem código: Issue, PR, CI, verificação, testes, README), `liberar.py` (merge do commit
+    escolhido + Publicar versão); workflow **Placar da equipe** (atualiza o comentário e as etiquetas a cada bloco);
+    agente `.claude/agents/qa-ja.md`; modelo de Issue **Pedido da equipe** e PR com "Como testar" para o QA. Nota do QA
+    0–100 (critérios 60, robustez 15, clareza 10, regressão 15); APROVADO só com ≥ 80 e sem crítico/grave.
+    Limite honesto: o QA não roda o Revit; o que depende dele vira "não verificado" e roteiro para o diretor.
+    O usuário autorizou o Claude a fazer sozinho merges, workflows e comentários no GitHub.
+    Primeiro ensaio (PR #7): o QA reprovou a iteração 1 (58) com 3 graves — regra de versão para PR sem mudança no
+    add-in, 3ª iteração sem chance de consenso e melhor versão podendo passar REPROVADO na frente de APROVADO, pacote
+    sem o placar. Iteração 2: `--sem-publicar`; na 3ª espera a posição; APROVADO vence REPROVADO; APROVADO < 80 vale
+    REPROVADO; posição com commit errado não vale; blocos em ``` / citação não contam; iteração 4 ignorada; RETOMAR;
+    pacote leva o placar e docs/equipe e recusa C#/XAML/PS1; cenários do QA adotados (test_consenso_qa.py).
+    Iteração 3 (QA 2 reprovou com 60: “CONCORDO EM PARTE” virava consenso, nota vazia quebrava o placar): só palavras
+    exatas, blocos inválidos ignorados e listados em “Avisos”, ~~~, nota “86/100”, chaves com acento, iterações em
+    ordem, LIBERAR do diretor exige commit, melhor versão APROVADO > APROVADO+DISCORDO > REPROVADO (com aviso).
+    No meio, o diretor pediu “sem GitHub”: **sem Issues nem PRs** — cada pedido é `equipe/pedidos/NNN-*.md` (modelo
+    `equipe/MODELO-PEDIDO.md`), com o placar gravado no topo e `equipe/QUADRO.md`; o quadro vive no branch `quadro`
+    (o envio direto ao main foi bloqueado; o compilar.yml ignora esse branch); `liberar.py` junta ao main pelo merge
+    do GitHub (sem PR); regra 7: critérios `(diretor)` (só no Revit/AutoCAD) ficam fora da nota do QA e vão para o
+    roteiro. Workflow do placar e modelos de Issue/PR removidos. Pedidos 006 e 008 migrados das Issues #6/#8.
+
 ### Pedidos em aberto
 20. ~~Painéis de parede cortina~~ — feito na 1.9.0 (item 57).
 21. ~~Folha "solta" na planta~~ — conferência automática + Conferir Planta na 1.9.0 (item 58); aguardando o
