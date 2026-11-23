@@ -17,7 +17,8 @@ param(
   [string[]]$RevitVersions = @("2024", "2025", "2026", "2027"),
   [string]$Configuration   = "Release",
   [switch]$PreferNuGet,
-  [switch]$Yes
+  [switch]$Yes,
+  [switch]$Strict
 )
 $ErrorActionPreference = "Stop"
 try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch { }
@@ -82,6 +83,7 @@ $dist = Join-Path $root "dist"
 if (Test-Path $dist) { Remove-Item $dist -Recurse -Force }
 $buildArgs = @{ RevitVersions = $RevitVersions; Configuration = $Configuration }
 if ($PreferNuGet) { $buildArgs.PreferNuGet = $true }
+if ($Strict) { $buildArgs.Strict = $true }
 & (Join-Path $PSScriptRoot "build.ps1") @buildArgs
 
 $built = Get-ChildItem $dist -Directory -Filter "Revit*" -ErrorAction SilentlyContinue

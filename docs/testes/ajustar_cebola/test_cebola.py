@@ -144,3 +144,5 @@ c = core_x(); pl = Wall((100, 120), (4900, 120), 20); tl = Wall((100, 135), (490
 pares, m, _, _ = rodar([c, pl, tl]); check('reboco longe fica; cerâmica no reboco', near(cy(pl), 120) and near(cy(tl), 135) and m == 0, (cy(pl), cy(tl)))
 
 print(f'{ok} ok, {falhas} falha(s)')
+import sys
+sys.exit(1 if falhas else 0)

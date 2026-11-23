@@ -1,0 +1,16 @@
+name: Melhoria ou ferramenta nova
+description: Uma função nova ou um jeito melhor de fazer
+title: "[Melhoria] "
+labels: ["melhoria"]
+body:
+  - type: input
+    id: ferramenta
+    attributes: { label: Ferramenta (ou "nova"), placeholder: "ex.: Preencher Parâmetros" }
+    validations: { required: true }
+  - type: textarea
+    id: pedido
+    attributes: { label: O que precisa, description: "Como deveria funcionar; um exemplo real do projeto ajuda" }
+    validations: { required: true }
+  - type: textarea
+    id: referencia
+    attributes: { label: Referências, description: "Imagens, normas, outro programa que faz parecido (Archicad, BIMcollab…)" }

@@ -1,0 +1,71 @@
+# Publica uma versão: ao enviar a etiqueta vX.Y.Z (git tag v2.6.1 && git push origin v2.6.1), ou à mão em Actions,
+# compila tudo, gera o instalador (Inno Setup) e cria a Release no GitHub com o Setup.exe e o zip para enviar.
+# A etiqueta tem de ser a mesma versão do Directory.Build.props.
+name: Publicar versão
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  instalador:
+    name: Instalador e Release
+    runs-on: windows-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verificação
+        run: python tools/verificar/verificar.py
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+      - name: Versão
+        id: versao
+        shell: pwsh
+        run: |
+          [xml]$p = Get-Content Directory.Build.props
+          $v = ($p.Project.PropertyGroup | ForEach-Object { $_.Version } | Where-Object { $_ } | Select-Object -First 1)
+          if ($env:GITHUB_REF -like 'refs/tags/v*') {
+            $tag = $env:GITHUB_REF_NAME.TrimStart('v')
+            if ($tag -ne $v) { throw "A etiqueta v$tag não é a versão do Directory.Build.props ($v)." }
+          }
+          "versao=$v" >> $env:GITHUB_OUTPUT
+      - name: Inno Setup
+        run: choco install innosetup --no-progress -y
+      - name: Compilar e gerar o instalador
+        shell: pwsh
+        env:
+          CI: 'true'
+        run: |
+          Start-Transcript -Path build-log.txt | Out-Null
+          try { ./build/make-installer.ps1 -PreferNuGet -Yes -Strict }
+          finally { Stop-Transcript | Out-Null }
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log-publicar
+          path: build-log.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: JA-Instalador-${{ steps.versao.outputs.versao }}
+          path: |
+            dist/Instalador/
+            dist/JA_Instalador_*.zip
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $v = "${{ steps.versao.outputs.versao }}"
+          $notas = "Instalador do **JA para Revit $v** (abas JA Famílias e JA Tools, Revit 2024–2027).`n`nBaixe ``JA_Instalador_$v.zip``, extraia e rode ``JA_Setup_$v.exe``. O que mudou: veja o MEMORIA.md."
+          gh release create "v$v" "dist/JA_Instalador_$v.zip" "dist/Instalador/JA_Setup_$v.exe" --title "JA para Revit $v" --notes "$notas" --generate-notes

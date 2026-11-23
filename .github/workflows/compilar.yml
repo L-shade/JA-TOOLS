@@ -1,0 +1,112 @@
+# Verifica e compila o JA para Revit a cada envio (push) e pull request.
+#  1. verificar  (Linux, ~1 min): tools/verificar/verificar.py — chaves, versão, faixa × catálogo, [Transaction],
+#                ícones, armadilhas já vistas e os testes de algoritmo (docs/testes).
+#  2. compilar   (Windows): build/build.ps1 -PreferNuGet -Strict — Revit 2024, 2025, 2026 e 2027 (API do NuGet) e os
+#                motores de união do AutoCAD. Erros do compilador viram anotações no arquivo/linha; o build-log.txt e
+#                a pasta dist\ (pronta para testar no Revit) ficam como artefatos da execução.
+#  3. visualizador-ifc (Windows, não bloqueia): compila o Visualizador IFC, ainda em desenvolvimento.
+name: Verificar e compilar
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: compilar-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verificar:
+    name: Verificar (sem compilar)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verificação e testes de algoritmo
+        run: python tools/verificar/verificar.py
+
+  compilar:
+    name: Compilar (Revit 2024–2027 + AutoCAD)
+    needs: verificar
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+      - uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'Directory.Build.props') }}
+          restore-keys: nuget-${{ runner.os }}-
+      - name: Compilar
+        shell: pwsh
+        run: |
+          Start-Transcript -Path build-log.txt | Out-Null
+          try { ./build/build.ps1 -PreferNuGet -Strict }
+          finally { Stop-Transcript | Out-Null }
+      - name: Resumo dos erros
+        if: always()
+        shell: pwsh
+        run: |
+          $log = if (Test-Path build-log.txt) { Get-Content build-log.txt } else { @() }
+          $erros = $log | Select-String -Pattern ': error [A-Z]+\d+' | ForEach-Object { $_.Line.Trim() } | Sort-Object -Unique
+          $res = $log | Select-String -Pattern '^(Revit incluidos|Motores de uniao|AVISO|WARNING|Falhou|  - )' | ForEach-Object { $_.Line }
+          "### Compilação" >> $env:GITHUB_STEP_SUMMARY
+          "" >> $env:GITHUB_STEP_SUMMARY
+          foreach ($l in $res) { "    $l" >> $env:GITHUB_STEP_SUMMARY }
+          "" >> $env:GITHUB_STEP_SUMMARY
+          "**$($erros.Count) erro(s) do compilador**" >> $env:GITHUB_STEP_SUMMARY
+          foreach ($e in ($erros | Select-Object -First 60)) { "- ``$e``" >> $env:GITHUB_STEP_SUMMARY }
+      - name: Guardar o build-log.txt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build-log.txt
+          retention-days: 30
+      - name: Guardar a compilação (dist)
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: JA-para-Revit-${{ github.sha }}
+          path: dist/
+          retention-days: 14
+
+  visualizador-ifc:
+    name: Visualizador IFC (em desenvolvimento)
+    needs: verificar
+    runs-on: windows-latest
+    timeout-minutes: 20
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Compilar
+        shell: pwsh
+        run: |
+          Start-Transcript -Path ifc-log.txt | Out-Null
+          try { dotnet build src/JA.IfcViewer/JA.IfcViewer.csproj -c Release; if ($LASTEXITCODE) { throw "falhou" } }
+          finally { Stop-Transcript | Out-Null }
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visualizador-ifc-log
+          path: ifc-log.txt
+          retention-days: 14
+      - if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: JA-Visualizador-IFC-${{ github.sha }}
+          path: bin/Release/VisualizadorIFC/
+          retention-days: 14

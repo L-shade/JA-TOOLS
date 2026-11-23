@@ -24,7 +24,10 @@ param(
   [string[]]$RevitVersions = @("2024", "2025", "2026", "2027"),
   [string]$Configuration   = "Release",
   [switch]$Deploy,
-  [switch]$PreferNuGet
+  [switch]$PreferNuGet,
+  # CI (GitHub Actions): a version that does not compile is an ERROR also when its API comes from NuGet
+  # (without -Strict it is only a warning: the NuGet package of a new Revit may not exist yet)
+  [switch]$Strict
 )
 $ErrorActionPreference = "Stop"
 try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch { }
@@ -130,7 +133,10 @@ foreach ($f in $families) {
 if (-not ($engines.Keys | Where-Object { $_ -like "R25-*" })) {
   $warnings += "AutoCAD 2025/2026: nenhum motor gerado; nesses AutoCAD o DWG unico nao funcionara."
 }
-if ($engines.Count -eq 0) { $warnings += "Nenhum motor de uniao gerado: o DWG unico nao funcionara." }
+if ($engines.Count -eq 0) {
+  if ($Strict) { $failures += "Motor de uniao do AutoCAD (nenhuma familia compilou)" }
+  else { $warnings += "Nenhum motor de uniao gerado: o DWG unico nao funcionara." }
+}
 
 # ================================================================ Revit add-ins (both, per version)
 $builtRevit = @()
@@ -151,7 +157,7 @@ foreach ($rv in $RevitVersions) {
     else { Write-Host "$($a.Name) para Revit $rv  ($tfm, NuGet Nice3point.Revit.Api $rv.*)" -ForegroundColor Cyan }
     if (-not (Invoke-DotnetBuild $a.Proj $props)) {
       $okAll = $false
-      if ($local) { $failures += "$($a.Name) - Revit $rv" }
+      if ($local -or $Strict) { $failures += "$($a.Name) - Revit $rv" }
       else { $warnings += "$($a.Name): Revit $rv nao incluido (pacote NuGet $rv.* indisponivel ou SDK sem suporte a $tfm)." }
     }
   }
